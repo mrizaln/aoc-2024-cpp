@@ -1,0 +1,36 @@
+#pragma once
+
+#include "aliases.hpp"
+#include "common.hpp"
+
+namespace aoc::day
+{
+    namespace al = aoc::aliases;
+    namespace sr = aoc::common::sr;
+    namespace sv = aoc::common::sv;
+
+    struct DayN
+    {
+        using Input  = std::monostate;
+        using Output = std::monostate;
+
+        static constexpr auto name = "00-no-name";
+
+        Input parse(common::Lines lines) const
+        {
+            return {};          // TODO: implement
+        }
+
+        Output solve_part_one(Input input) const
+        {
+            return {};          // TODO: implement
+        }
+
+        Output solve_part_two(Input input) const
+        {
+            return {};          // TODO: implement
+        }
+    };
+
+    static_assert(common::Day<DayN>);
+}
