@@ -97,17 +97,15 @@ namespace aoc::common
         }
 
         Duration elapsed() const noexcept { return Clock::now() - m_start; }
+        void     reset() noexcept { m_start = Clock::now(); }
 
         TimePoint m_start;
     };
 
-    template <Day D>
-    struct ParseResult
+    struct RawInput
     {
-        std::string                   m_raw_input;
-        std::vector<std::string_view> m_raw_input_lines;
-        D::Input                      m_parsed;
-        Timer::Duration               m_time;
+        std::string                   m_string;
+        std::vector<std::string_view> m_lines;
     };
 
     template <Day D>
@@ -118,16 +116,21 @@ namespace aoc::common
         Timer::Duration m_solve_time;
     };
 
-    template <Day D>
-    ParseResult<D> parse_file(const D& d, const fs::path& path) noexcept
+    struct BenchResult
+    {
+        Timer::Duration m_parse_time;
+        Timer::Duration m_solve_time;
+    };
+
+    inline RawInput parse_file(const fs::path& path) noexcept
     {
         assert(fs::exists(path));
 
         // allow raw input (and the lines span) be moved outside without invalidating std::string_view to it
-        auto result = ParseResult<D>{};
+        auto raw_input = RawInput{};
 
         auto  file         = std::ifstream{ path };
-        auto& file_content = result.m_raw_input;
+        auto& file_content = raw_input.m_string;
 
         auto lines_view = std::vector<std::pair<std::size_t, std::size_t>>{};
 
@@ -142,18 +145,12 @@ namespace aoc::common
 
         auto to_substr = [&](auto&& pair) {
             auto&& [begin, size] = pair;
-            auto str_begin       = file_content.begin() + begin;
-            return std::string_view{ str_begin, str_begin + size };
+            auto str_begin       = file_content.begin() + static_cast<std::ptrdiff_t>(begin);
+            return std::string_view{ str_begin, str_begin + static_cast<std::ptrdiff_t>(size) };
         };
 
-        result.m_raw_input_lines = lines_view | sv::transform(to_substr) | sr::to<std::vector>();
-
-        auto timer = Timer{};
-
-        result.m_parsed = d.parse(result.m_raw_input_lines);
-        result.m_time   = timer.elapsed();
-
-        return result;
+        raw_input.m_lines = lines_view | sv::transform(to_substr) | sr::to<std::vector>();
+        return raw_input;
     }
 
     template <AreDays Days>
@@ -180,47 +177,80 @@ namespace aoc::common
     }
 
     template <Day D>
-    RunResult<D> run_solution(D&& day, const fs::path& infile, Part part)
+    RunResult<D> run_solution(const D& day, const fs::path& infile, Part part)
     {
-        auto [_raw, _raw_lines, input, parse_timing] = parse_file(day, infile);
+        auto timer                 = Timer{};
+        auto [_raw_str, raw_lines] = parse_file(infile);
 
-        auto timer  = Timer{};
-        auto output = [&] {
+        timer.reset();
+        auto input      = day.parse(raw_lines);
+        auto parse_time = timer.elapsed();
+
+        auto solve = [&] {
             switch (part) {
             case Part::One: return day.solve_part_one(std::move(input)); break;
             case Part::Two: return day.solve_part_two(std::move(input)); break;
             default: [[unlikely]]; std::abort();
             }
-        }();
+        };
+
+        timer.reset();
+        auto output     = solve();
+        auto solve_time = timer.elapsed();
 
         return {
             .m_result     = std::move(output),
-            .m_parse_time = parse_timing,
-            .m_solve_time = timer.elapsed(),
+            .m_parse_time = parse_time,
+            .m_solve_time = solve_time,
         };
     }
 
-    template <Day... Ds>
-    std::tuple<RunResult<Ds>...> run_solution_multi(
-        const std::tuple<Ds...>&                 days,
-        std::span<const fs::path, sizeof...(Ds)> infiles,
-        Part                                     part
-    )
+    template <Day D>
+    BenchResult bench_solution(const D& day, const fs::path& infile, Part part, std::size_t repeat)
     {
-        auto result = std::tuple<RunResult<Ds>...>{};
+        if (repeat < 3) {
+            throw std::logic_error{ "repeating less than 3 is not very useful for benchmarking..." };
+        }
 
-        auto solver = [&]<std::size_t I>() {
-            std::get<I>(result) = run_solution(std::get<I>(days), infiles[I], part);
+        auto timer                 = Timer{};
+        auto [_raw_str, raw_lines] = parse_file(infile);
+
+        auto bench_parse = [&] {
+            timer.reset();
+            auto _input = day.parse(raw_lines);
+            return timer.elapsed();
         };
 
-        helper::for_each_tuple<std::tuple<Ds...>>([&]<common::Day T>() {
-            auto solution = T{};
-            auto do_run   = [&]<std::size_t... I>(std::index_sequence<I...>) {
-                (solver.template operator()<I>(), ...);
-            };
-        });
+        auto bench_solve = [&](const D::Input& input) {
+            timer.reset();
+            switch (part) {
+            case Part::One: day.solve_part_one(input); break;    // copy input
+            case Part::Two: day.solve_part_two(input); break;    // copy input
+            default: [[unlikely]]; std::abort();
+            }
+            return timer.elapsed();
+        };
 
-        return result;
+        constexpr auto warmup = 3uz;
+
+        auto parse_time = Timer::Duration{};
+        for (auto _ : sv::iota(0uz, warmup)) {
+            std::ignore = bench_parse();
+        }
+        for (auto _ : sv::iota(0uz, repeat)) {
+            parse_time += bench_parse();
+        }
+
+        auto input      = day.parse(raw_lines);
+        auto solve_time = Timer::Duration{};
+        for (auto _ : sv::iota(0uz, warmup)) {
+            std::ignore = bench_solve(input);
+        }
+        for (auto _ : sv::iota(0uz, repeat)) {
+            solve_time += bench_solve(input);
+        }
+
+        return { .m_parse_time = parse_time / repeat, .m_solve_time = solve_time / repeat };
     }
 
     template <Displayable T>
@@ -234,4 +264,11 @@ namespace aoc::common
             return ss.str();
         }
     }
+
+    template <std::floating_point ToRep>
+    auto to_ms(Timer::Duration dur)
+    {
+        using Ms = std::chrono::duration<ToRep, std::milli>;
+        return std::chrono::duration_cast<Ms>(dur);
+    };
 }

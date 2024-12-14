@@ -43,4 +43,20 @@ namespace aoc::helper
         };
         handler(std::make_index_sequence<std::tuple_size_v<Tuple>>());
     }
+
+    template <typename Tuple, typename Fn>
+    constexpr auto for_each_tuple(const Tuple& tuple, Fn&& fn)
+    {
+        if constexpr (std::same_as<void, std::invoke_result_t<Fn, std::tuple_element_t<0, Tuple>>>) {
+            const auto handler = [&]<std::size_t... I>(std::index_sequence<I...>) {
+                (fn(std::get<I>(tuple)), ...);
+            };
+            handler(std::make_index_sequence<std::tuple_size_v<Tuple>>());
+        } else {
+            const auto handler = [&]<std::size_t... I>(std::index_sequence<I...>) {
+                return std::tuple{ fn(std::get<I>(tuple))... };
+            };
+            return handler(std::make_index_sequence<std::tuple_size_v<Tuple>>());
+        }
+    }
 }
