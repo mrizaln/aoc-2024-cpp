@@ -22,7 +22,7 @@ namespace aoc::common
     namespace sr = std::ranges;
     namespace sv = std::views;
 
-    using Lines = std::span<std::string_view>;
+    using Lines = std::span<const std::string_view>;
 
     template <typename T>
     concept Streamable = requires (std::ostream& os, const T& t) {
