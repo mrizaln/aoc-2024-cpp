@@ -118,6 +118,7 @@ namespace aoc::day
                 return { num1 * num2, next2 + 1 };
             }
 
+            // TODO: use custom number parser instead of from_chars (since the number of digits is limited)
             std::pair<al::i64, al::usize> parse_num(al::usize start)
             {
                 auto storage     = std::array<char, 3>{};

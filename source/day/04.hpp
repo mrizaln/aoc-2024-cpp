@@ -6,7 +6,6 @@
 namespace aoc::day
 {
     namespace al = aoc::aliases;
-    namespace sr = aoc::common::sr;
     namespace sv = aoc::common::sv;
 
     namespace day4
