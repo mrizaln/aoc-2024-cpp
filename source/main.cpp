@@ -2,33 +2,42 @@
 
 #include <CLI/CLI.hpp>
 #include <fmt/core.h>
+#include <fmt/color.h>
 
-using Solutions        = aoc::day::Days;
-using SolutionsVariant = aoc::helper::ToVariant<Solutions>;
+using aoc::common::Day, aoc::common::RunResult, aoc::common::Part, aoc::common::Timer;
 
-static_assert(std::tuple_size_v<Solutions> != 0, "No solutions provided");
-static_assert(aoc::common::AreDays<Solutions>, "Not all types in Solutions conform to the Day concept");
+inline static auto DATA_DIR = std::filesystem::path{ "data" };
 
-inline static auto data_dir = std::filesystem::path{ "data" };
-
-bool run_one(SolutionsVariant&& solution)
+template <Day D>
+bool run_one(D&& day)
 {
-    auto name   = std::visit([](auto&& t) { return t.name; }, solution);
-    auto infile = data_dir / "inputs" / name;
-
+    auto infile = DATA_DIR / "inputs" / D::id;
     infile.replace_extension(".txt");
 
+    fmt::println(">>> [{}] {:<24.24}", D::id, D::name);
     if (not std::filesystem::exists(infile)) {
-        fmt::println("{:<24.24} │ {}: {}", name, "input file not found", infile);
+        fmt::println(
+            "\t {}: {} - {}",    //
+            fmt::styled("FAILED", fmt::fg(fmt::color::red)),
+            "input file not found",
+            infile
+        );
         return false;
     }
 
-    using P = aoc::common::Part;
-    for (auto part : { P::One, P::Two }) {
-        aoc::common::run_solution(std::move(solution), infile, part, [&](auto&& output) {
-            auto str = aoc::common::display(output);
-            fmt::print("{:<24.24} │ part {} │ {}\n", name, std::to_underlying(part), str);
-        });
+    for (auto part : { Part::One, Part::Two }) {
+        RunResult result = aoc::common::run_solution(std::move(day), infile, part);
+
+        auto to_ms = [](Timer::Duration dur) {
+            using Ms = std::chrono::duration<double, std::milli>;
+            return std::chrono::duration_cast<Ms>(dur);
+        };
+
+        fmt::println("\t> part {}", std::to_underlying(part));
+        fmt::println("\t  parse time: {}", to_ms(result.m_parse_time));
+        fmt::println("\t  solve time: {}", to_ms(result.m_solve_time));
+        fmt::println("\t  total time: {}", to_ms(result.m_parse_time + result.m_solve_time));
+        fmt::println("\t  result    : {}\n", result.m_result);
     }
 
     return true;
@@ -36,10 +45,10 @@ bool run_one(SolutionsVariant&& solution)
 
 int main(int argc, char** argv)
 {
-    auto app               = CLI::App{ "AOC C++ template/runner" };
+    auto app               = CLI::App{ "AOC C++ solutions" };
     auto selected_solution = std::string{};
 
-    auto solutions = aoc::common::generate_solutions_names<Solutions>();
+    auto solutions = aoc::common::generate_solutions_ids<aoc::day::Days>();
     solutions.insert(solutions.begin(), "all");
 
     app.add_option("solution", selected_solution, "which solution to run")
@@ -54,24 +63,16 @@ int main(int argc, char** argv)
     CLI11_PARSE(app, argc, argv);
 
     if (selected_solution == "all") {
-        for (auto& solution : solutions | aoc::common::sv::drop(1)) {
-            auto solution_variant = aoc::common::create_solution<Solutions>(solution).value();
-            auto success          = run_one(std::move(solution_variant));
+        using aoc::helper::for_each_tuple;
 
-            if (not success) {
-                return 1;
-            }
-        }
+        auto success_count = 0;
+        for_each_tuple<aoc::day::Days>([&]<Day D>() { success_count += run_one(D{}); });
 
-        return 0;
+        return success_count;
     }
 
-    auto solution = aoc::common::create_solution<Solutions>(selected_solution).value();
-    auto success  = run_one(std::move(solution));
+    auto variant = aoc::common::create_solution<aoc::day::Days>(selected_solution).value();
+    auto success = std::visit([](auto&& d) { return run_one(std::move(d)); }, variant);
 
-    if (not success) {
-        return 1;
-    }
-
-    return 0;
+    return success;
 }

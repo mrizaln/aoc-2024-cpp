@@ -11,10 +11,11 @@ namespace aoc::day
 
     struct DayN
     {
+        static constexpr auto id   = "00";
+        static constexpr auto name = "no-name";
+
         using Input  = std::monostate;
         using Output = std::monostate;
-
-        static constexpr auto name = "00-no-name";
 
         Input parse(common::Lines lines) const
         {

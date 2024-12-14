@@ -45,6 +45,7 @@ namespace aoc::common
 
         requires Displayable<typename T::Output>;
 
+        { T::id } -> std::convertible_to<std::string_view>;
         { T::name } -> std::convertible_to<std::string_view>;
 
         requires requires (const T ct, T::Input input, Lines lines) {
@@ -101,12 +102,32 @@ namespace aoc::common
     };
 
     template <Day D>
-    D::Input parse_file(const D& d, const fs::path& path) noexcept
+    struct ParseResult
+    {
+        std::string                   m_raw_input;
+        std::vector<std::string_view> m_raw_input_lines;
+        D::Input                      m_parsed;
+        Timer::Duration               m_time;
+    };
+
+    template <Day D>
+    struct RunResult
+    {
+        D::Output       m_result;
+        Timer::Duration m_parse_time;
+        Timer::Duration m_solve_time;
+    };
+
+    template <Day D>
+    ParseResult<D> parse_file(const D& d, const fs::path& path) noexcept
     {
         assert(fs::exists(path));
 
-        auto file         = std::ifstream{ path };
-        auto file_content = std::string{};
+        // allow raw input (and the lines span) be moved outside without invalidating std::string_view to it
+        auto result = ParseResult<D>{};
+
+        auto  file         = std::ifstream{ path };
+        auto& file_content = result.m_raw_input;
 
         auto lines_view = std::vector<std::pair<std::size_t, std::size_t>>{};
 
@@ -124,67 +145,82 @@ namespace aoc::common
             auto str_begin       = file_content.begin() + begin;
             return std::string_view{ str_begin, str_begin + size };
         };
-        auto lines = lines_view | sv::transform(to_substr) | sr::to<std::vector>();
 
-        return d.parse(lines);
-    }
+        result.m_raw_input_lines = lines_view | sv::transform(to_substr) | sr::to<std::vector>();
 
-    template <Day D>
-    bool write_output(const typename D::Output& output, const fs::path& path, WriteMode mode) noexcept
-    {
-        auto flag = std::ios::out;
+        auto timer = Timer{};
 
-        switch (mode) {
-        case WriteMode::Overwrite: flag |= std::ios::trunc; break;
-        case WriteMode::Append: flag |= std::ios::app; break;
-        }
+        result.m_parsed = d.parse(result.m_raw_input_lines);
+        result.m_time   = timer.elapsed();
 
-        auto file = std::ofstream{ path, flag };
-        if (file << output) {
-            return true;
-        }
-
-        return false;
+        return result;
     }
 
     template <AreDays Days>
-    std::vector<std::string_view> generate_solutions_names()
+    std::vector<std::string_view> generate_solutions_ids()
     {
-        auto names = std::vector<std::string_view>{};
+        auto ids = std::vector<std::string_view>{};
         helper::for_each_tuple<Days>([&]<common::Day T>() {
-            static_assert(T::name != "all", "Solution name cannot be 'all'");
-            names.push_back(T::name);
+            static_assert(T::id != "all", "Solution id cannot be 'all'");
+            ids.push_back(T::id);
         });
-        return names;
+        return ids;
     }
 
     template <AreDays Days>
-    std::optional<helper::ToVariant<Days>> create_solution(std::string_view name)
+    std::optional<helper::ToVariant<Days>> create_solution(std::string_view id)
     {
         auto solution = std::optional<helper::ToVariant<Days>>{};
         helper::for_each_tuple<Days>([&]<common::Day T>() {
-            if (T::name == name) {
+            if (T::id == id) {
                 solution = T{};
             }
         });
         return solution;
     }
 
-    template <AreDays DaysVar, typename OutFn>
-    void run_solution(DaysVar&& solution, const fs::path& infile, Part part, OutFn&& out_fn)
+    template <Day D>
+    RunResult<D> run_solution(D&& day, const fs::path& infile, Part part)
     {
-        auto solver = [&]<common::Day T>(T&& t) {
-            auto input  = parse_file(t, infile);
-            auto output = [&] {
-                switch (part) {
-                case Part::One: return t.solve_part_one(input); break;
-                case Part::Two: return t.solve_part_two(input); break;
-                default: [[unlikely]]; std::abort();
-                }
-            }();
-            out_fn(output);
+        auto [_raw, _raw_lines, input, parse_timing] = parse_file(day, infile);
+
+        auto timer  = Timer{};
+        auto output = [&] {
+            switch (part) {
+            case Part::One: return day.solve_part_one(std::move(input)); break;
+            case Part::Two: return day.solve_part_two(std::move(input)); break;
+            default: [[unlikely]]; std::abort();
+            }
+        }();
+
+        return {
+            .m_result     = std::move(output),
+            .m_parse_time = parse_timing,
+            .m_solve_time = timer.elapsed(),
         };
-        std::visit(solver, std::forward<DaysVar>(solution));
+    }
+
+    template <Day... Ds>
+    std::tuple<RunResult<Ds>...> run_solution_multi(
+        const std::tuple<Ds...>&                 days,
+        std::span<const fs::path, sizeof...(Ds)> infiles,
+        Part                                     part
+    )
+    {
+        auto result = std::tuple<RunResult<Ds>...>{};
+
+        auto solver = [&]<std::size_t I>() {
+            std::get<I>(result) = run_solution(std::get<I>(days), infiles[I], part);
+        };
+
+        helper::for_each_tuple<std::tuple<Ds...>>([&]<common::Day T>() {
+            auto solution = T{};
+            auto do_run   = [&]<std::size_t... I>(std::index_sequence<I...>) {
+                (solver.template operator()<I>(), ...);
+            };
+        });
+
+        return result;
     }
 
     template <Displayable T>

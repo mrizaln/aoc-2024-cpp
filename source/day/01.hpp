@@ -15,12 +15,13 @@ namespace aoc::day
 
     struct Day01
     {
+        static constexpr auto id   = "01";
+        static constexpr auto name = "historian-hysteria";
+
         using Pair = std::pair<al::i32, al::i32>;
 
         using Input  = std::vector<Pair>;
         using Output = al::i32;
-
-        static constexpr auto name = "01-historian-hysteria";
 
         Input parse(common::Lines lines) const
         {
@@ -35,7 +36,7 @@ namespace aoc::day
             return lines | sv::transform(to_pair) | sr::to<std::vector>();
         }
 
-        // PERF: optimize by using binary search tree
+        // TODO: try using binary search tree
         Output solve_part_one(Input input) const
         {
             auto left  = std::vector<al::i32>{};
