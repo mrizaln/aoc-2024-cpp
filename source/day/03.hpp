@@ -20,7 +20,7 @@ namespace aoc::day
                     auto slice = m_str.substr(i, 3);
 
                     if (slice == "mul") {
-                        // all mul go proceed parse operands
+                        // is mul, go proceed parse operands
                         auto [result, next]  = parse_operands(i + 3);
                         acc                 += result;
                         i                    = next;
@@ -39,6 +39,60 @@ namespace aoc::day
                 return acc;
             }
 
+            std::pair<al::i64, bool> parse_with_conditional(bool start_enabled)
+            {
+                auto acc     = al::i64{ 0 };
+                auto enabled = start_enabled;
+
+                for (auto i = 0uz; i < m_str.size() - 3;) {
+                    auto slice = m_str.substr(i, 3);
+
+                    if (slice == "mul") {
+                        // is mul, go proceed parse operands
+                        auto [result, next] = parse_operands(i + 3);
+                        if (enabled) {
+                            acc += result;
+                        }
+                        i = next;
+                    } else if (slice == "do(") {
+                        // input doesn't contain invalid <do> instruction, this check should be unnecessary
+                        if (i + 3 < m_str.size() and m_str[i + 3] == ')') {
+                            enabled  = true;
+                            i       += 4;
+                        } else {
+                            i += 3;
+                        }
+                    } else if (slice == "don") {
+                        // input doesn't contain invalid <don't> instruction, this check should be unnecessary
+                        if (i + 3 + 4 >= m_str.size()) {
+                            i += 3 + 4;
+                        } else if (m_str.substr(i + 3, 4) == "'t()") {
+                            enabled  = false;
+                            i       += 3 + 4;
+                        } else {
+                            i += 3;
+                        }
+                    } else if (slice[1] == 'm' and slice[2] == 'u') {
+                        // possibly mul offset by 1
+                        i += 1;
+                    } else if (slice[2] == 'm') {
+                        // possibly mul offset by 2
+                        i += 2;
+                    } else if (slice[1] == 'd' and slice[2] == 'o') {
+                        // possibly do or don't
+                        i += 1;
+                    } else if (slice[2] == 'd') {
+                        // possibly do or don't
+                        i += 2;
+                    } else {
+                        // no mul found, skip to next
+                        i += 3;
+                    }
+                }
+
+                return { acc, enabled };
+            }
+
             // returns the mul operation result and the next index to start parsing
             std::pair<al::i64, al::usize> parse_operands(al::usize start)
             {
@@ -49,14 +103,14 @@ namespace aoc::day
 
                 auto [num1, next1] = parse_num(start + 1);
 
-                if (start >= m_str.size() or m_str[next1] != ',') {
+                if (next1 >= m_str.size() or m_str[next1] != ',') {
                     // no comma, skip to next
                     return { 0, next1 + 1 };
                 }
 
                 auto [num2, next2] = parse_num(next1 + 1);
 
-                if (start >= m_str.size() or m_str[next2] != ')') {
+                if (next2 >= m_str.size() or m_str[next2] != ')') {
                     // no right paren, skip to next
                     return { 0, next2 + 1 };
                 }
@@ -114,9 +168,19 @@ namespace aoc::day
             return acc;
         }
 
-        Output solve_part_two(Input /* input */) const
+        Output solve_part_two(Input input) const
         {
-            return {};    // TODO: implement
+            auto acc = al::i64{ 0 };
+
+            auto enabled = true;
+            for (auto&& line : input) {
+                auto parser         = day3::MulParser{ line };
+                auto [res, enable]  = parser.parse_with_conditional(enabled);
+                acc                += res;
+                enabled             = enable;
+            }
+
+            return acc;
         }
     };
 
