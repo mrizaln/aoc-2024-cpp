@@ -2,8 +2,7 @@
 
 #include "aliases.hpp"
 #include "common.hpp"
-
-#include <scn/scan.h>
+#include "util.hpp"
 
 namespace aoc::day
 {
@@ -33,18 +32,11 @@ namespace aoc::day
         Input parse(common::Lines lines) const
         {
             auto to_arr = [](std::string_view line) -> Arr {
-                auto arr = Arr{};
-                arr.fill(invalid);
-
-                auto i = 0uz;
-
-                auto input = scn::ranges::subrange{ line };
-                while (auto res = scn::scan<al::i32>(input, "{}")) {
-                    arr[i++] = res->value();
-                    input    = res->range();
+                auto res = util::split_part_parse_n<al::i32, max_size>(line, ' ', invalid);
+                if (not res.is_success()) {
+                    throw res.as_error();
                 }
-
-                return arr;
+                return std::move(res).as_success().m_val;
             };
 
             return lines | sv::transform(to_arr) | sr::to<std::vector>();

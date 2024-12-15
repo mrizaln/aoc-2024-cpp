@@ -2,8 +2,7 @@
 
 #include "aliases.hpp"
 #include "common.hpp"
-
-#include <scn/scan.h>
+#include "util.hpp"
 
 #include <unordered_map>
 
@@ -15,8 +14,9 @@ namespace aoc::day
 
     struct Day05
     {
-        static constexpr auto id   = "05";
-        static constexpr auto name = "print-queue";
+        static constexpr auto id           = "05";
+        static constexpr auto name         = "print-queue";
+        static constexpr auto max_line_len = 23;    // the input of 05.txt says so
 
         using Rules   = std::unordered_map<al::u32, std::vector<al::u32>>;
         using Pages   = std::vector<al::u32>;
@@ -58,25 +58,32 @@ namespace aoc::day
                     break;
                 }
 
-                auto res = scn::scan<al::u32, al::u32>(line, "{}|{}");
-                if (not res) {
-                    throw std::runtime_error{ "Failed to parse input" };
+                auto res = util::split_parse_n<al::u32, 2>(line, '|');
+                if (not res.is_success()) {
+                    throw res.as_error();
                 }
 
-                auto [l, r] = res->values();
+                auto [l, r] = std::move(res).as_success().m_val;
                 parsed.m_rules[l].emplace_back(r);
             }
 
             while (i < lines.size()) {
                 auto line       = lines[i++];
                 auto line_pages = std::vector<al::u32>{};
+                line_pages.reserve(max_line_len);
 
-                auto input = scn::ranges::subrange{ line };
-                while (auto res = scn::scan<al::i32>(input, "{},")) {
-                    line_pages.emplace_back(res->value());
-                    input = res->range();
+                auto splitter = util::SplitDyn{ line, ',' };
+                while (true) {
+                    auto res = splitter.next_parse<al::i32>();
+                    if (not res) {
+                        break;
+                    }
+                    if (not res->is_success()) {
+                        throw res->as_error();
+                    }
+                    auto value = std::move(*res).as_success().m_val;
+                    line_pages.emplace_back(value);
                 }
-                line_pages.emplace_back(scn::scan<al::i32>(input, "{}")->value());
 
                 parsed.m_updates.push_back(std::move(line_pages));
             }
@@ -104,10 +111,11 @@ namespace aoc::day
         {
             const auto& [rules, updates] = input;
 
-            auto ordered       = std::vector<al::u32>{};
+            auto ordered = std::vector<al::u32>{};
+            ordered.reserve(max_line_len);
+
             auto rectify_order = [&](std::span<const al::u32> pages, al::usize unorder_pos) {
                 ordered.clear();
-                ordered.reserve(pages.size());    // does nothing if storage is big enough
 
                 for (auto i : sv::iota(0uz, unorder_pos)) {
                     ordered.push_back(pages[i]);

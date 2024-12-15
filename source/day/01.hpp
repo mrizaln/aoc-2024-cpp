@@ -2,8 +2,7 @@
 
 #include "aliases.hpp"
 #include "common.hpp"
-
-#include <scn/scan.h>
+#include "util.hpp"
 
 #include <unordered_map>
 
@@ -26,11 +25,12 @@ namespace aoc::day
         Input parse(common::Lines lines) const
         {
             auto to_pair = [](std::string_view line) -> Pair {
-                auto res = scn::scan<al::i32, al::i32>(line, "{} {}");
-                if (not res) {
-                    throw std::runtime_error("Failed to parse input");
+                auto res = util::split_parse_n<al::i32, 2>(line, ' ');
+                if (not res.is_success()) {
+                    throw res.as_error();
                 }
-                return res->values();
+                auto [l, r] = std::move(res).as_success().m_val;
+                return { l, r };
             };
 
             return lines | sv::transform(to_pair) | sr::to<std::vector>();

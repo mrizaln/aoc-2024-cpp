@@ -2,6 +2,7 @@
 
 #include "aliases.hpp"
 #include "common.hpp"
+
 #include <charconv>
 
 namespace aoc::day
