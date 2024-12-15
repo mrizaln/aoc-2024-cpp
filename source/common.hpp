@@ -5,8 +5,8 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 #include <fmt/std.h>
+#include <libassert/assert.hpp>
 
-#include <cassert>
 #include <concepts>
 #include <filesystem>
 #include <fstream>
@@ -124,7 +124,7 @@ namespace aoc::common
 
     inline RawInput parse_file(const fs::path& path) noexcept
     {
-        assert(fs::exists(path));
+        ASSERT(fs::exists(path), fmt::format("path '{}' must exist when calling this function", path));
 
         // allow raw input (and the lines span) be moved outside without invalidating std::string_view to it
         auto raw_input = RawInput{};

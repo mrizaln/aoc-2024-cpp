@@ -70,7 +70,7 @@ namespace aoc::day
 
         inline bool x_mas(common::Lines in, al::usize y, al::usize x)
         {
-            assert(x >= 1 and y >= 1 and x < in[y].size() - 1 and y < in.size() - 1);
+            ASSERT(x >= 1 and y >= 1 and x < in[y].size() - 1 and y < in.size() - 1);
 
             // x-mas down
             auto pattern_1 = [&] {
