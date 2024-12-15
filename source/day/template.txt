@@ -23,12 +23,12 @@ namespace aoc::day
             return {};          // TODO: implement
         }
 
-        Output solve_part_one(Input input) const
+        Output solve_part_one(Input /* input */) const
         {
             return {};          // TODO: implement
         }
 
-        Output solve_part_two(Input input) const
+        Output solve_part_two(Input /* input */) const
         {
             return {};          // TODO: implement
         }
