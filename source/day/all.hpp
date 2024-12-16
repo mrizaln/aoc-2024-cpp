@@ -4,6 +4,7 @@
 #include "day/04.hpp"
 #include "day/05.hpp"
 #include "day/06.hpp"
+#include "day/07.hpp"
 
 namespace aoc::day
 {
@@ -13,5 +14,6 @@ namespace aoc::day
         Day03,
         Day04,
         Day05,
-        Day06>;
+        Day06,
+        Day07>;
 }
