@@ -33,10 +33,9 @@ namespace aoc::day
 
         struct PermutatedOperation
         {
-            template <std::ranges::sized_range R>
-            al::u64 operate(R&& r)
+            al::u64 operate(std::span<const al::u64> r)
             {
-                auto op = [&](al::u64 v, al::isize i) {
+                auto op = [&](al::u64 v, al::usize i) {
                     switch ((m_op_perm >> i) & 1) {
                     case 0: return v + r[i + 1]; break;
                     case 1: return v * r[i + 1]; break;
@@ -45,8 +44,8 @@ namespace aoc::day
                 };
 
                 auto result = r[0];
-                for (auto i : sv::iota(0uz, std::ranges::size(r) - 1)) {
-                    result = op(result, static_cast<al::isize>(i));
+                for (auto i : sv::iota(0uz, r.size() - 1)) {
+                    result = op(result, i);
                 }
 
                 ++m_op_perm;
@@ -68,8 +67,7 @@ namespace aoc::day
                 Concat,
             };
 
-            template <std::ranges::sized_range R>
-            al::u64 operate(R&& r)
+            al::u64 operate(std::span<const al::u64> r)
             {
                 // there are only 3 digits per operand on the right, I add more checks til 100000 just in-case
                 auto concat = [](al::u64 l, al::u64 r) {
@@ -88,8 +86,8 @@ namespace aoc::day
                     return l * pow10[digits(r)] + r;
                 };
 
-                auto op = [&](al::u64 v, al::isize i) {
-                    switch (m_op_perm[static_cast<al::usize>(i)]) {
+                auto op = [&](al::u64 v, al::usize i) {
+                    switch (m_op_perm[i]) {
                     case Op::Add: return v + r[i + 1]; break;
                     case Op::Mul: return v * r[i + 1]; break;
                     case Op::Concat: return concat(v, r[i + 1]); break;
@@ -98,8 +96,8 @@ namespace aoc::day
                 };
 
                 auto result = r[0];
-                for (auto i : sv::iota(0uz, std::ranges::size(r) - 1)) {
-                    result = op(result, static_cast<al::isize>(i));
+                for (auto i : sv::iota(0uz, r.size() - 1)) {
+                    result = op(result, i);
                 }
 
                 next_perm();
@@ -182,14 +180,15 @@ namespace aoc::day
 
             // I don't believe in std::pow for exact integers :>
             // since the max operands is 12, this is ok
-            static auto pow3 = std::array{
+            static constexpr auto pow3 = std::array{
                 1uz, 3uz, 9uz, 27uz, 81uz, 243uz, 729uz, 2187uz, 6561uz, 19683uz, 59049uz, 177147uz,
             };
             static_assert(pow3.size() == max_operands, "pow3 size must match max_operands");
 
             for (auto [expect, ops] : input) {
                 for (auto _ : sv::iota(0uz, pow3[ops.m_count - 1])) {
-                    if (perm_op.operate(ops.get()) == expect) {
+                    auto perm_result = perm_op.operate(ops.get());
+                    if (perm_result == expect) {
                         result += expect;
                         break;
                     }
