@@ -17,6 +17,11 @@ namespace aoc::day
         static constexpr auto max_operands  = 12;
         static constexpr auto invalid_value = std::numeric_limits<al::u64>::max();
 
+        static constexpr auto pow10 = std::array{ 1uz, 10uz, 100uz, 1000uz, 10000uz, 100000uz };
+        static constexpr auto pow3  = std::array{
+            1uz, 3uz, 9uz, 27uz, 81uz, 243uz, 729uz, 2187uz, 6561uz, 19683uz, 59049uz, 177147uz,
+        };
+
         struct Operands
         {
             std::array<al::u64, max_operands> m_values;
@@ -33,24 +38,28 @@ namespace aoc::day
 
         struct PermutatedOperation
         {
-            al::u64 operate(std::span<const al::u64> r)
+            bool can_produce_result(std::span<const al::u64> ops, al::u64 expect)
             {
                 auto op = [&](al::u64 v, al::usize i) {
                     switch ((m_op_perm >> i) & 1) {
-                    case 0: return v + r[i + 1]; break;
-                    case 1: return v * r[i + 1]; break;
+                    case 0: return v + ops[i + 1]; break;
+                    case 1: return v * ops[i + 1]; break;
                     default: [[unlikely]] std::abort(); break;
                     }
                 };
 
-                auto result = r[0];
-                for (auto i : sv::iota(0uz, r.size() - 1)) {
-                    result = op(result, i);
+                for (auto _ : sv::iota(0uz, 1uz << (ops.size() - 1))) {
+                    auto result = ops[0];
+                    for (auto i : sv::iota(0uz, ops.size() - 1)) {
+                        result = op(result, i);
+                    }
+                    if (result == expect) {
+                        return true;
+                    }
+                    ++m_op_perm;
                 }
 
-                ++m_op_perm;
-
-                return result;
+                return false;
             }
 
             void reset() { m_op_perm = 0; }
@@ -67,12 +76,13 @@ namespace aoc::day
                 Concat,
             };
 
-            al::u64 operate(std::span<const al::u64> r)
+            // TODO: eliminate further checks on result exceeding the expected value
+            // TODO: other people use recursion to naturally have eliminate above case, try to use it
+            bool can_produce_result(std::span<const al::u64> ops, al::u64 expect)
             {
                 // there are only 3 digits per operand on the right, I add more checks til 100000 just in-case
                 auto concat = [](al::u64 l, al::u64 r) {
-                    static auto pow10  = std::array{ 1uz, 10uz, 100uz, 1000uz, 10000uz, 100000uz };
-                    auto        digits = [](al::u64 v) {
+                    auto digits = [](al::u64 v) {
                         // clang-format off
                         if (v < 10)     return 1uz;
                         if (v < 100)    return 2uz;
@@ -88,29 +98,38 @@ namespace aoc::day
 
                 auto op = [&](al::u64 v, al::usize i) {
                     switch (m_op_perm[i]) {
-                    case Op::Add: return v + r[i + 1]; break;
-                    case Op::Mul: return v * r[i + 1]; break;
-                    case Op::Concat: return concat(v, r[i + 1]); break;
+                    case Op::Add: return v + ops[i + 1]; break;
+                    case Op::Mul: return v * ops[i + 1]; break;
+                    case Op::Concat: return concat(v, ops[i + 1]); break;
                     default: [[unlikely]] std::abort(); break;
                     }
                 };
 
-                auto result = r[0];
-                for (auto i : sv::iota(0uz, r.size() - 1)) {
-                    result = op(result, i);
+                for (auto _ : sv::iota(0uz, pow3[ops.size() - 1])) {
+                    auto result = ops[0];
+                    for (auto i : sv::iota(0uz, ops.size() - 1)) {
+                        result = op(result, i);
+                    }
+                    if (result == expect) {
+                        return true;
+                    }
+                    next_perm();
                 }
 
-                next_perm();
-
-                return result;
+                return false;
             }
 
             void next_perm()
             {
                 auto cycle = [](Op& op) {
-                    auto res = std::div(static_cast<int>(op) + 1, 3);
-                    op       = static_cast<Op>(res.rem);
-                    return res.quot != 0;
+                    auto res = static_cast<int>(op) + 1;
+                    if (res == 3) {
+                        op = Op::Add;
+                        return true;
+                    } else {
+                        op = static_cast<Op>(res);
+                        return false;
+                    }
                 };
 
                 for (auto& op : m_op_perm) {
@@ -122,7 +141,7 @@ namespace aoc::day
 
             void reset() { m_op_perm.fill(Op::Add); }
 
-            std::array<Op, max_operands> m_op_perm = {};
+            std::array<Op, max_operands - 1> m_op_perm = {};
         };
 
         using Input  = std::vector<Equation>;
@@ -161,11 +180,8 @@ namespace aoc::day
             auto perm_op = PermutatedOperation{};
 
             for (auto [expect, ops] : input) {
-                for (auto _ : sv::iota(0uz, 1uz << (ops.m_count - 1))) {
-                    if (perm_op.operate(ops.get()) == expect) {
-                        result += expect;
-                        break;
-                    }
+                if (perm_op.can_produce_result(ops.get(), expect)) {
+                    result += expect;
                 }
                 perm_op.reset();
             }
@@ -180,18 +196,11 @@ namespace aoc::day
 
             // I don't believe in std::pow for exact integers :>
             // since the max operands is 12, this is ok
-            static constexpr auto pow3 = std::array{
-                1uz, 3uz, 9uz, 27uz, 81uz, 243uz, 729uz, 2187uz, 6561uz, 19683uz, 59049uz, 177147uz,
-            };
             static_assert(pow3.size() == max_operands, "pow3 size must match max_operands");
 
             for (auto [expect, ops] : input) {
-                for (auto _ : sv::iota(0uz, pow3[ops.m_count - 1])) {
-                    auto perm_result = perm_op.operate(ops.get());
-                    if (perm_result == expect) {
-                        result += expect;
-                        break;
-                    }
+                if (perm_op.can_produce_result(ops.get(), expect)) {
+                    result += expect;
                 }
                 perm_op.reset();
             }
