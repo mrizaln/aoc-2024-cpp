@@ -32,11 +32,8 @@ namespace aoc::day
         Input parse(common::Lines lines) const
         {
             auto to_arr = [](std::string_view line) -> Arr {
-                auto res = util::split_part_parse_n<al::i32, max_size>(line, ' ', invalid);
-                if (not res.is_success()) {
-                    throw res.as_error();
-                }
-                return std::move(res).as_success().m_val;
+                auto res = util::split_part_parse_n<al::i32, max_size>(line, ' ', invalid).as_success();
+                return std::move(res).m_parsed;
             };
 
             return lines | sv::transform(to_arr) | sr::to<std::vector>();

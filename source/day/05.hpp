@@ -58,12 +58,7 @@ namespace aoc::day
                     break;
                 }
 
-                auto res = util::split_parse_n<al::u32, 2>(line, '|');
-                if (not res.is_success()) {
-                    throw res.as_error();
-                }
-
-                auto [l, r] = std::move(res).as_success().m_val;
+                auto [l, r] = util::split_parse_n<al::u32, 2>(line, '|').as_success();
                 parsed.m_rules[l].emplace_back(r);
             }
 
@@ -72,17 +67,13 @@ namespace aoc::day
                 auto line_pages = std::vector<al::u32>{};
                 line_pages.reserve(max_line_len);
 
-                auto splitter = util::SplitDyn{ line, ',' };
+                auto splitter = util::StringSplitter{ line, ',' };
                 while (true) {
-                    auto res = splitter.next_parse<al::i32>();
-                    if (not res) {
+                    if (auto res = splitter.next_parse<al::i32>(); res.has_value()) {
+                        line_pages.emplace_back(std::move(*res).as_success());
+                    } else {
                         break;
                     }
-                    if (not res->is_success()) {
-                        throw res->as_error();
-                    }
-                    auto value = std::move(*res).as_success().m_val;
-                    line_pages.emplace_back(value);
                 }
 
                 parsed.m_updates.push_back(std::move(line_pages));

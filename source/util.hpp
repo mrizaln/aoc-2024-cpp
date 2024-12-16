@@ -15,13 +15,21 @@ namespace aoc::util
         // clang-format off
         struct SplitError {                  };
         struct ParseError { std::errc m_err; };
-        struct Success    { T         m_val; };
 
+        using Success = T;
         using Variant = std::variant<Success, SplitError, ParseError>;
-
-        bool      is_success() const noexcept { return std::holds_alternative<Success>(m_value);   }
-        Success&& as_success() &&             { return std::move(*std::get_if<Success>(&m_value)); }
         // clang-format on
+
+        bool      is_success() const noexcept { return std::holds_alternative<Success>(m_value); }
+        Success&& unwrap_success() && { return std::move(*std::get_if<Success>(&m_value)); }
+
+        Success&& as_success() &&
+        {
+            if (not is_success()) {
+                throw as_error();
+            }
+            return std::move(*this).unwrap_success();
+        }
 
         std::runtime_error as_error() const noexcept
         {
@@ -49,6 +57,16 @@ namespace aoc::util
         std::size_t                     m_count = 0;
     };
 
+    template <std::default_initializable T, std::size_t N>
+    using Parsed = std::array<T, N>;
+
+    template <std::default_initializable T, std::size_t N>
+    struct PartParsed
+    {
+        std::array<T, N> m_parsed = {};
+        std::size_t      m_count  = 0;
+    };
+
     template <typename T>
         requires std::is_fundamental_v<T>
     std::pair<T, std::errc> from_chars(std::string_view str) noexcept
@@ -58,21 +76,29 @@ namespace aoc::util
         return { res, ec };
     };
 
-    class SplitDyn
+    class StringSplitter
     {
     public:
         template <typename T>
         struct NextParseResult
         {
             // clang-format off
-            struct Success { T         m_val; };
-            struct Error   { std::errc m_err; };
+            struct Error { std::errc m_err; };
 
+            using Success = T;
             using Variant = std::variant<Success, Error>;
+            // clang-format on
 
             bool      is_success() const noexcept { return std::holds_alternative<Success>(m_value); }
-            Success&& as_success() &&             { return std::move(*std::get_if<Success>(&m_value)); }
-            // clang-format on
+            Success&& unwrap_success() && { return std::move(*std::get_if<Success>(&m_value)); }
+
+            Success&& as_success() &&
+            {
+                if (not is_success()) {
+                    throw as_error();
+                }
+                return std::move(*this).unwrap_success();
+            }
 
             std::runtime_error as_error() const noexcept
             {
@@ -88,7 +114,7 @@ namespace aoc::util
             Variant m_value;
         };
 
-        SplitDyn(std::string_view str, char delim) noexcept
+        StringSplitter(std::string_view str, char delim) noexcept
             : m_str{ str }
             , m_delim{ delim }
         {
@@ -130,7 +156,7 @@ namespace aoc::util
                 return NextParseResult<T>{ typename NextParseResult<T>::Error{ ec } };
             }
 
-            return NextParseResult<T>{ typename NextParseResult<T>::Success{ value } };
+            return NextParseResult<T>{ typename NextParseResult<T>::Success{ std::move(value) } };
         }
 
     private:
@@ -179,9 +205,9 @@ namespace aoc::util
 
     template <typename T, std::size_t N>
         requires std::is_fundamental_v<T>
-    SplitParseResult<std::array<T, N>> split_parse_n(std::string_view str, char delim) noexcept
+    SplitParseResult<Parsed<T, N>> split_parse_n(std::string_view str, char delim) noexcept
     {
-        using Res = SplitParseResult<std::array<T, N>>;
+        using Res = SplitParseResult<Parsed<T, N>>;
 
         auto values = std::array<T, N>{};
         auto split  = split_n<N>(str, delim);
@@ -202,13 +228,13 @@ namespace aoc::util
 
     template <typename T, std::size_t N>
         requires std::is_fundamental_v<T>
-    SplitParseResult<std::array<T, N>> split_part_parse_n(
+    SplitParseResult<PartParsed<T, N>> split_part_parse_n(
         std::string_view str,
         char             delim,
         T                default_value
     ) noexcept
     {
-        using Res = SplitParseResult<std::array<T, N>>;
+        using Res = SplitParseResult<PartParsed<T, N>>;
 
         auto values = std::array<T, N>{};
         values.fill(default_value);
@@ -223,6 +249,6 @@ namespace aoc::util
             values[i] = value;
         }
 
-        return Res{ typename Res::Success{ values } };
+        return Res{ typename Res::Success{ .m_parsed = std::move(values), .m_count = count } };
     }
 }

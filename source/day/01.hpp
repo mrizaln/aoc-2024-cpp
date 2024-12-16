@@ -25,11 +25,7 @@ namespace aoc::day
         Input parse(common::Lines lines) const
         {
             auto to_pair = [](std::string_view line) -> Pair {
-                auto res = util::split_parse_n<al::i32, 2>(line, ' ');
-                if (not res.is_success()) {
-                    throw res.as_error();
-                }
-                auto [l, r] = std::move(res).as_success().m_val;
+                auto [l, r] = util::split_parse_n<al::i32, 2>(line, ' ').as_success();
                 return { l, r };
             };
 
