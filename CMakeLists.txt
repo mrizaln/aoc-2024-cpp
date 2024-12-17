@@ -18,6 +18,13 @@ target_compile_options(main PRIVATE -Wall -Wextra -Wconversion)
 
 # sanitizer
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  # target_compile_options(main PRIVATE -fsanitize=address,leak,undefined)
-  # target_link_options(main PRIVATE -fsanitize=address,leak,undefined)
+  target_compile_options(main PRIVATE -fsanitize=address,leak,undefined)
+  target_link_options(main PRIVATE -fsanitize=address,leak,undefined)
 endif()
+
+add_custom_command(
+  TARGET main
+  COMMENT "Linking data directory to build directory"
+  PRE_BUILD
+  COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_SOURCE_DIR}/data/
+          $<TARGET_FILE_DIR:main>/data)
