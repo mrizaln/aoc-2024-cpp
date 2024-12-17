@@ -1,3 +1,8 @@
 .cache/
 **/build/
 **/*.json
+
+data/inputs/**
+data/examples/**
+!data/inputs/.keep
+!data/examples/.keep
