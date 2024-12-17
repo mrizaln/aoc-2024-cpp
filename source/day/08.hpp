@@ -136,22 +136,16 @@ namespace aoc::day
             for (const auto& [antenna, locations] : antennas) {
                 auto iter = AntennaPairIter{ locations };
                 while (auto pair = iter.next()) {
-                    auto cmp = pair->first <=> pair->second;
-                    auto u   = [](al::isize x) { return static_cast<al::usize>(x); };
-
-                    if (cmp == std::strong_ordering::less) {
-                        auto [left, right] = *pair;
-                        auto [dx, dy]      = distance(left, right);
-                        antinodes.emplace_back(left.m_x - u(dx), left.m_y - u(dy));
-                        antinodes.emplace_back(right.m_x + u(dx), right.m_y + u(dy));
-                    } else if (cmp == std::strong_ordering::greater) {
-                        auto [right, left] = *pair;
-                        auto [dx, dy]      = distance(left, right);
-                        antinodes.emplace_back(left.m_x - u(dx), left.m_y - u(dy));
-                        antinodes.emplace_back(right.m_x + u(dx), right.m_y + u(dy));
-                    } else {
-                        ASSERT(false, "antennas are collinear, pair on the same position is not possible");
+                    auto [left, right] = *pair;
+                    if (left > right) {
+                        std::swap(left, right);
                     }
+
+                    auto [dx, dy] = distance(left, right);
+                    auto u        = [](al::isize x) { return static_cast<al::usize>(x); };
+
+                    antinodes.emplace_back(left.m_x - u(dx), left.m_y - u(dy));
+                    antinodes.emplace_back(right.m_x + u(dx), right.m_y + u(dy));
                 }
             }
 
@@ -175,45 +169,30 @@ namespace aoc::day
             for (const auto& [antenna, locations] : antennas) {
                 auto iter = AntennaPairIter{ locations };
                 while (auto pair = iter.next()) {
-                    auto cmp = pair->first <=> pair->second;
-                    auto u   = [](al::isize x) { return static_cast<al::usize>(x); };
+                    auto [left, right] = *pair;
+                    if (left > right) {
+                        std::swap(left, right);
+                    }
 
-                    if (cmp == std::strong_ordering::less) {
-                        auto [left, right] = *pair;
-                        auto [dx, dy]      = distance(left, right);
+                    // antinodes on the antennas also counted
+                    antinodes.push_back(left);
+                    antinodes.push_back(right);
 
-                        left = Coordinate{ left.m_x - u(dx), left.m_y - u(dy) };
-                        while (in_bound(left)) {
-                            antinodes.push_back(left);
-                            left.m_x -= u(dx);
-                            left.m_y -= u(dy);
-                        }
+                    auto [dx, dy] = distance(left, right);
+                    auto u        = [](al::isize x) { return static_cast<al::usize>(x); };
 
-                        left = Coordinate{ left.m_x + u(dx), left.m_y + u(dy) };
-                        while (in_bound(left)) {
-                            antinodes.push_back(left);
-                            left.m_x += u(dx);
-                            left.m_y += u(dy);
-                        }
-                    } else if (cmp == std::strong_ordering::greater) {
-                        auto [right, left] = *pair;
-                        auto [dx, dy]      = distance(left, right);
+                    left = Coordinate{ left.m_x - u(dx), left.m_y - u(dy) };
+                    while (in_bound(left)) {
+                        antinodes.push_back(left);
+                        left.m_x -= u(dx);
+                        left.m_y -= u(dy);
+                    }
 
-                        left = Coordinate{ left.m_x - u(dx), left.m_y - u(dy) };
-                        while (in_bound(left)) {
-                            antinodes.push_back(left);
-                            left.m_x -= u(dx);
-                            left.m_y -= u(dy);
-                        }
-
-                        left = Coordinate{ left.m_x + u(dx), left.m_y + u(dy) };
-                        while (in_bound(left)) {
-                            antinodes.push_back(left);
-                            left.m_x += u(dx);
-                            left.m_y += u(dy);
-                        }
-                    } else {
-                        ASSERT(false, "antennas are collinear, pair on the same position is not possible");
+                    right = Coordinate{ right.m_x + u(dx), right.m_y + u(dy) };
+                    while (in_bound(right)) {
+                        antinodes.push_back(right);
+                        right.m_x += u(dx);
+                        right.m_y += u(dy);
                     }
                 }
             }
