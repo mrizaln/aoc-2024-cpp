@@ -217,7 +217,7 @@ namespace aoc::common
 
         auto bench_parse = [&] {
             timer.reset();
-            auto _input = day.parse(raw_lines);
+            auto _ = day.parse(raw_lines);
             return timer.elapsed();
         };
 

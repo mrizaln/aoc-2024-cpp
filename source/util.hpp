@@ -7,6 +7,8 @@
 #include <system_error>
 #include <variant>
 
+#include "common.hpp"
+
 namespace aoc::util
 {
     template <typename T>
@@ -250,5 +252,17 @@ namespace aoc::util
         }
 
         return Res{ typename Res::Success{ .m_parsed = std::move(values), .m_count = count } };
+    }
+
+    template <std::ranges::range R>
+    auto subrange(R&& range, std::size_t start, std::size_t end)
+    {
+        return range | common::sv::drop(start) | common::sv::take(end - start);
+    }
+
+    template <std::ranges::range R>
+    auto subrange_rev(R&& range, std::size_t start, std::size_t end)
+    {
+        return subrange(range, start, end) | common::sv::reverse;
     }
 }
