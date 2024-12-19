@@ -7,6 +7,8 @@
 #include <system_error>
 #include <variant>
 
+#include <fmt/core.h>
+
 #include "common.hpp"
 
 namespace aoc::util
@@ -265,4 +267,79 @@ namespace aoc::util
     {
         return subrange(range, start, end) | common::sv::reverse;
     }
+
+    template <typename T>
+    struct Coordinate
+    {
+        using Type = T;
+
+        auto operator<=>(const Coordinate&) const = default;
+
+        Coordinate operator+(const Coordinate& rhs) const { return { m_x + rhs.m_x, m_y + rhs.m_y }; }
+        Coordinate operator-(const Coordinate& rhs) const { return { m_x - rhs.m_x, m_y - rhs.m_y }; }
+        Coordinate operator-() const { return { -m_x, -m_y }; }
+
+        // special case for unsigned integral addition with diff of its signed counterpart
+        Coordinate operator+(const Coordinate<std::make_signed_t<T>>& rhs) const
+            requires std::unsigned_integral<T>
+        {
+            return { m_x + static_cast<T>(rhs.m_x), m_y + static_cast<T>(rhs.m_y) };
+        }
+
+        T m_x;
+        T m_y;
+    };
+
+    template <typename T>
+    Coordinate<std::make_signed_t<T>> distance(const Coordinate<T>& lhs, const Coordinate<T>& rhs)
+    {
+        using Signed = std::make_signed_t<T>;
+
+        auto&& [lx, ly] = lhs;
+        auto&& [rx, ry] = rhs;
+
+        auto x_diff = static_cast<Signed>(rx) - static_cast<Signed>(lx);
+        auto y_diff = static_cast<Signed>(ry) - static_cast<Signed>(ly);
+
+        return { x_diff, y_diff };
+    }
 }
+
+template <std::formattable<char> T>
+struct fmt::formatter<aoc::util::Coordinate<T>, char> : fmt::formatter<T>
+{
+    template <typename FormatContext>
+    auto format(const aoc::util::Coordinate<T>& coord, FormatContext& ctx) const
+    {
+        fmt::format_to(ctx.out(), "(");
+        fmt::formatter<T>::format(coord.m_x, ctx);
+        fmt::format_to(ctx.out(), ", ");
+        fmt::formatter<T>::format(coord.m_y, ctx);
+        fmt::format_to(ctx.out(), ")");
+        return ctx.out();
+    }
+};
+
+template <typename T>
+struct std::hash<aoc::util::Coordinate<T>>
+{
+    std::size_t operator()(const aoc::util::Coordinate<T>& c) const
+    {
+        using Coord = aoc::util::Coordinate<T>;
+
+        if constexpr (sizeof(Coord) == 2) {
+            auto casted = std::bit_cast<std::uint16_t>(c);
+            return std::hash<std::uint16_t>{}(casted);
+        } else if constexpr (sizeof(Coord) == 4) {
+            auto casted = std::bit_cast<std::uint32_t>(c);
+            return std::hash<std::uint32_t>{}(casted);
+        } else if constexpr (sizeof(Coord) == 8) {
+            auto casted = std::bit_cast<std::uint64_t>(c);
+            return std::hash<std::uint64_t>{}(casted);
+        } else {
+            auto&& [x, y] = c;
+            auto hash     = std::hash<T>{};
+            return hash(x) ^ (hash(y) << 1);
+        }
+    }
+};

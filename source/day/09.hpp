@@ -94,8 +94,7 @@ namespace aoc::day
             auto next_file = [&](al::usize start, al::usize file_id) {
                 auto sub_mem = util::subrange_rev(memory, 0, start);
                 auto end     = sr::find(sub_mem, file_id);
-                auto diff    = static_cast<al::usize>(end - sub_mem.begin());
-                return start - diff;
+                return start - static_cast<al::usize>(end - sub_mem.begin());
             };
 
             auto find_space = [&](al::usize size, al::usize right) -> std::optional<al::usize> {
