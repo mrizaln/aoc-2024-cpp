@@ -2,14 +2,14 @@
 
 #include <array>
 #include <charconv>
+#include <ranges>
 #include <string_view>
 #include <optional>
 #include <system_error>
 #include <variant>
 
 #include <fmt/core.h>
-
-#include "common.hpp"
+#include <rapidhash.h>
 
 namespace aoc::util
 {
@@ -259,13 +259,13 @@ namespace aoc::util
     template <std::ranges::range R>
     auto subrange(R&& range, std::size_t start, std::size_t end)
     {
-        return range | common::sv::drop(start) | common::sv::take(end - start);
+        return range | std::views::drop(start) | std::views::take(end - start);
     }
 
     template <std::ranges::range R>
     auto subrange_rev(R&& range, std::size_t start, std::size_t end)
     {
-        return subrange(range, start, end) | common::sv::reverse;
+        return subrange(range, start, end) | std::views::reverse;
     }
 
     template <typename T>
@@ -280,8 +280,9 @@ namespace aoc::util
         Coordinate operator-() const { return { -m_x, -m_y }; }
 
         // special case for unsigned integral addition with diff of its signed counterpart
-        Coordinate operator+(const Coordinate<std::make_signed_t<T>>& rhs) const
-            requires std::unsigned_integral<T>
+        template <typename U>
+            requires std::same_as<std::make_signed_t<std::decay_t<T>>, U>
+        Coordinate operator+(const Coordinate<U>& rhs) const
         {
             return { m_x + static_cast<T>(rhs.m_x), m_y + static_cast<T>(rhs.m_y) };
         }
@@ -303,43 +304,48 @@ namespace aoc::util
 
         return { x_diff, y_diff };
     }
+
+    template <typename T, typename Ctx>
+    struct FormatterHelper
+    {
+        using Fmt = fmt::formatter<T, char>;
+
+        [[gnu::always_inline]]
+        const FormatterHelper& operator<<(const T& t) const
+        {
+            m_fmt.format(t, m_ctx);
+            return *this;
+        }
+
+        [[gnu::always_inline]]
+        const FormatterHelper& operator<<(const char* str) const
+        {
+            fmt::format_to(m_ctx.out(), "{}", str);
+            return *this;
+        }
+
+        const Fmt& m_fmt;
+        Ctx&       m_ctx;
+    };
 }
 
-template <std::formattable<char> T>
+template <fmt::formattable<char> T>
 struct fmt::formatter<aoc::util::Coordinate<T>, char> : fmt::formatter<T>
 {
     template <typename FormatContext>
     auto format(const aoc::util::Coordinate<T>& coord, FormatContext& ctx) const
     {
-        fmt::format_to(ctx.out(), "(");
-        fmt::formatter<T>::format(coord.m_x, ctx);
-        fmt::format_to(ctx.out(), ", ");
-        fmt::formatter<T>::format(coord.m_y, ctx);
-        fmt::format_to(ctx.out(), ")");
+        auto helper   = aoc::util::FormatterHelper<T, FormatContext>{ *this, ctx };
+        auto&& [x, y] = coord;
+        helper << "(" << x << "," << y << ")";
         return ctx.out();
     }
 };
 
+// general hash for any type that has unique object representations
 template <typename T>
-struct std::hash<aoc::util::Coordinate<T>>
+    requires std::has_unique_object_representations_v<T>
+struct std::hash<T>
 {
-    std::size_t operator()(const aoc::util::Coordinate<T>& c) const
-    {
-        using Coord = aoc::util::Coordinate<T>;
-
-        if constexpr (sizeof(Coord) == 2) {
-            auto casted = std::bit_cast<std::uint16_t>(c);
-            return std::hash<std::uint16_t>{}(casted);
-        } else if constexpr (sizeof(Coord) == 4) {
-            auto casted = std::bit_cast<std::uint32_t>(c);
-            return std::hash<std::uint32_t>{}(casted);
-        } else if constexpr (sizeof(Coord) == 8) {
-            auto casted = std::bit_cast<std::uint64_t>(c);
-            return std::hash<std::uint64_t>{}(casted);
-        } else {
-            auto&& [x, y] = c;
-            auto hash     = std::hash<T>{};
-            return hash(x) ^ (hash(y) << 1);
-        }
-    }
+    std::size_t operator()(const T& obj) const noexcept { return rapidhash(&obj, sizeof(obj)); }
 };
