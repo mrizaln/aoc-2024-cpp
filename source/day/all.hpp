@@ -8,10 +8,11 @@
 #include "day/08.hpp"
 #include "day/09.hpp"
 #include "day/10.hpp"
+#include "day/11.hpp"
 
 namespace aoc::day
 {
-    using Days = std::tuple<    //
+    using Days = std::tuple<
         Day01,
         Day02,
         Day03,
@@ -21,6 +22,7 @@ namespace aoc::day
         Day07,
         Day08,
         Day09,
-        Day10    //
+        Day10,
+        Day11    //
         >;
 }
