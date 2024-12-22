@@ -287,6 +287,12 @@ namespace aoc::util
             return { m_x + static_cast<T>(rhs.m_x), m_y + static_cast<T>(rhs.m_y) };
         }
 
+        // check if `this` is within range [min, max)
+        bool within(const Coordinate& min, const Coordinate& max) const
+        {
+            return m_x >= min.m_x and m_x < max.m_x and m_y >= min.m_y and m_y < max.m_y;
+        }
+
         T m_x;
         T m_y;
     };
@@ -303,6 +309,93 @@ namespace aoc::util
         auto y_diff = static_cast<Signed>(ry) - static_cast<Signed>(ly);
 
         return { x_diff, y_diff };
+    }
+
+    /* Von Neumann neighborhood, clockwise (on left-handed system).
+     *............
+     *.....>......
+     *....^cv.....
+     *.....<......
+     *............
+     * start from `>`.
+     */
+    template <typename T>
+    std::array<Coordinate<T>, 4> neumann_neighbors(const Coordinate<T>& coord)
+    {
+        auto&& [x, y] = coord;
+        return {
+            // clang-format off
+            Coordinate{ x    , y - 1 },
+            Coordinate{ x + 1, y     },
+            Coordinate{ x    , y + 1 },
+            Coordinate{ x - 1, y     },
+            // clang-format on
+        };
+    }
+
+    enum class NeighborDir : std::uint8_t
+    {
+        N  = 0b0001,
+        E  = 0b0010,
+        S  = 0b0100,
+        W  = 0b1000,
+        NE = N | E,
+        SE = S | E,
+        SW = S | W,
+        NW = N | W,
+    };
+
+    // get the neighbor coordinate by direction (left-handed system)
+    template <typename T>
+    util::Coordinate<T> neighbor_by_dir(const util::Coordinate<T>& coord, NeighborDir dir)
+    {
+        auto&& [x, y] = coord;
+
+        switch (dir) {
+            // clang-format off
+        case NeighborDir::N:  return { x    , y - 1 };
+        case NeighborDir::E:  return { x + 1, y     };
+        case NeighborDir::S:  return { x    , y + 1 };
+        case NeighborDir::W:  return { x - 1, y     };
+        case NeighborDir::NE: return { x + 1, y - 1 };
+        case NeighborDir::SE: return { x + 1, y + 1 };
+        case NeighborDir::SW: return { x - 1, y + 1 };
+        case NeighborDir::NW: return { x - 1, y - 1 };
+            // clang-format on
+        }
+    }
+
+    struct Iter2D
+    {
+        struct Iterator
+        {
+            Iterator& operator++()
+            {
+                if (++m_x == m_width) {
+                    m_x = 0;
+                    ++m_y;
+                }
+                return *this;
+            }
+
+            Coordinate<std::size_t> operator*() const { return { m_x, m_y }; }
+            auto                    operator<=>(const Iterator&) const = default;
+
+            std::size_t m_x;
+            std::size_t m_y;
+            std::size_t m_width;
+        };
+
+        Iterator begin() const { return { 0, 0, m_width }; }
+        Iterator end() const { return { 0, m_height, m_width }; }
+
+        std::size_t m_width;
+        std::size_t m_height;
+    };
+
+    inline Iter2D iter_2d(std::size_t width, std::size_t height)
+    {
+        return { width, height };
     }
 
     template <typename T, typename Ctx>
