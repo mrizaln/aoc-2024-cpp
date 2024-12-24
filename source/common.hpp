@@ -16,6 +16,15 @@
 #include <type_traits>
 #include <vector>
 
+namespace aoc::info
+{
+#if defined(NDEBUG)
+    constexpr bool is_debug = false;
+#else
+    constexpr bool is_debug = true;
+#endif
+};
+
 namespace aoc::common
 {
     namespace fs = std::filesystem;

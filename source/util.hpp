@@ -315,6 +315,9 @@ namespace aoc::util
 
         constexpr auto operator<=>(const Coordinate&) const = default;
 
+        constexpr Coordinate operator*(const T& r) const { return { m_x * r, m_y * r }; }
+        constexpr Coordinate operator/(const T& r) const { return { m_x / r, m_y / r }; }
+
         constexpr Coordinate operator+(const Coordinate& r) const { return { m_x + r.m_x, m_y + r.m_y }; }
         constexpr Coordinate operator-(const Coordinate& r) const { return { m_x - r.m_x, m_y - r.m_y }; }
         constexpr Coordinate operator-() const { return { -m_x, -m_y }; }
@@ -377,6 +380,32 @@ namespace aoc::util
             Coordinate{ x    , y - 1 },
             Coordinate{ x + 1, y     },
             Coordinate{ x    , y + 1 },
+            Coordinate{ x - 1, y     },
+            // clang-format on
+        };
+    }
+
+    /* Moore neighborhood, clockwise (on left-handed system).
+     *............
+     *....>>v.....
+     *....^cv.....
+     *....^<<.....
+     *............
+     * start from `>`.
+     */
+    template <typename T>
+    std::array<Coordinate<T>, 8> moore_neighbors(const Coordinate<T>& coord)
+    {
+        auto&& [x, y] = coord;
+        return {
+            // clang-format off
+            Coordinate{ x - 1, y - 1 },
+            Coordinate{ x    , y - 1 },
+            Coordinate{ x + 1, y - 1 },
+            Coordinate{ x + 1, y     },
+            Coordinate{ x + 1, y + 1 },
+            Coordinate{ x    , y + 1 },
+            Coordinate{ x - 1, y + 1 },
             Coordinate{ x - 1, y     },
             // clang-format on
         };
