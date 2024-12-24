@@ -2,16 +2,13 @@
 
 #include "aliases.hpp"
 #include "common.hpp"
-#include "util.hpp"
 
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 
 namespace aoc::day
 {
     namespace al = aoc::aliases;
-    namespace sr = aoc::common::sr;
     namespace sv = aoc::common::sv;
 
     namespace day8

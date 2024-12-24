@@ -15,7 +15,7 @@ namespace aoc::day
         template <al::usize Sentinel>
         inline al::usize checksum(std::span<const al::usize> memory)
         {
-            auto sum = al::usize{ 0 };
+            auto sum = 0uz;
             for (auto [i, v] : memory | sv::enumerate) {
                 if (v == Sentinel) {
                     continue;
@@ -44,7 +44,7 @@ namespace aoc::day
         Output solve_part_one(Input input) const
         {
             auto memory          = std::vector<al::usize>{};
-            auto file_id_counter = al::usize{ 0 };
+            auto file_id_counter = 0uz;
 
             for (auto [i, c] : input | sv::enumerate) {
                 auto block = static_cast<al::usize>(c - '0');
@@ -74,7 +74,7 @@ namespace aoc::day
         Output solve_part_two(Input input) const
         {
             auto memory          = std::vector<al::usize>{};
-            auto file_id_counter = al::usize{ 0 };
+            auto file_id_counter = 0uz;
 
             for (auto [i, c] : input | sv::enumerate) {
                 auto block = static_cast<al::usize>(c - '0');

@@ -190,7 +190,7 @@ namespace aoc::common
             switch (part) {
             case Part::One: return day.solve_part_one(std::move(input)); break;
             case Part::Two: return day.solve_part_two(std::move(input)); break;
-            default: [[unlikely]]; std::abort();
+            default: [[unlikely]]; std::unreachable();
             }
         };
 
@@ -226,7 +226,7 @@ namespace aoc::common
             switch (part) {
             case Part::One: day.solve_part_one(input); break;    // copy input
             case Part::Two: day.solve_part_two(input); break;    // copy input
-            default: [[unlikely]]; std::abort();
+            default: [[unlikely]]; std::unreachable();
             }
             return timer.elapsed();
         };

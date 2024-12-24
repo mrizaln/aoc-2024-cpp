@@ -14,7 +14,7 @@ namespace aoc::day
         static constexpr auto id   = "07";
         static constexpr auto name = "bridge-repair";
 
-        static constexpr auto max_operands  = 12;
+        static constexpr auto max_operands  = 12uz;
         static constexpr auto invalid_value = std::numeric_limits<al::u64>::max();
 
         static constexpr auto pow10 = std::array{ 1uz, 10uz, 100uz, 1000uz, 10000uz, 100000uz };
@@ -44,7 +44,7 @@ namespace aoc::day
                     switch ((m_op_perm >> i) & 1) {
                     case 0: return v + ops[i + 1]; break;
                     case 1: return v * ops[i + 1]; break;
-                    default: [[unlikely]] std::abort(); break;
+                    default: [[unlikely]] std::unreachable(); break;
                     }
                 };
 
@@ -89,7 +89,7 @@ namespace aoc::day
                         if (v < 1000)   return 3uz;
                         if (v < 10000)  return 4uz;
                         if (v < 100000) return 5uz;
-                        else            std::abort();
+                        else            std::unreachable();
                         // clang-format on
                     };
 
@@ -101,7 +101,7 @@ namespace aoc::day
                     case Op::Add: return v + ops[i + 1]; break;
                     case Op::Mul: return v * ops[i + 1]; break;
                     case Op::Concat: return concat(v, ops[i + 1]); break;
-                    default: [[unlikely]] std::abort(); break;
+                    default: [[unlikely]] std::unreachable(); break;
                     }
                 };
 

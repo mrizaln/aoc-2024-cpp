@@ -15,7 +15,7 @@ namespace aoc::day
         {
             al::i64 parse()
             {
-                auto acc = al::i64{ 0 };
+                auto acc = 0_i64;
 
                 for (auto i = 0uz; i < m_str.size() - 3;) {
                     auto slice = m_str.substr(i, 3);
@@ -42,7 +42,7 @@ namespace aoc::day
 
             std::pair<al::i64, bool> parse_with_conditional(bool start_enabled)
             {
-                auto acc     = al::i64{ 0 };
+                auto acc     = 0_i64;
                 auto enabled = start_enabled;
 
                 for (auto i = 0uz; i < m_str.size() - 3;) {
@@ -138,7 +138,7 @@ namespace aoc::day
                     return { 0, start };
                 }
 
-                auto num = al::i64{ 0 };
+                auto num = 0_i64;
                 std::from_chars(storage.data(), storage.data() + storage_idx, num);
 
                 return { num, start };
@@ -160,7 +160,7 @@ namespace aoc::day
 
         Output solve_part_one(Input input) const
         {
-            auto acc = al::i64{ 0 };
+            auto acc = 0_i64;
 
             for (auto&& line : input) {
                 auto parser  = day3::MulParser{ line };
@@ -172,7 +172,7 @@ namespace aoc::day
 
         Output solve_part_two(Input input) const
         {
-            auto acc = al::i64{ 0 };
+            auto acc = 0_i64;
 
             auto enabled = true;
             for (auto&& line : input) {

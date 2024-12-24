@@ -50,18 +50,18 @@ namespace aoc::day
             bool is_visited(const Coord& coord) const
             {
                 auto&& [x, y] = coord;
-                return m_visited[y * m_width + x] != 0x00;
+                return m_visited[y * m_width + x];
             }
 
             void visit(const Coord& coord)
             {
                 auto&& [x, y]              = coord;
-                m_visited[y * m_width + x] = 0xff;
+                m_visited[y * m_width + x] = true;
             }
 
             al::usize         m_width;
             al::usize         m_height;
-            std::vector<char> m_visited;
+            std::vector<bool> m_visited;
         };
     }
 
@@ -170,7 +170,7 @@ namespace aoc::day
                     region.m_area.insert(current);
 
                     // for convex corners
-                    auto adj = al::u8{ 0 };
+                    auto adj = 0_u32;
                     for (auto&& [i, neighbor] : util::neumann_neighbors(current) | sv::enumerate) {
                         if (not neighbor.within(min, max)) {
                             adj |= 1 << i;
@@ -197,7 +197,7 @@ namespace aoc::day
 
                 // for concave corners
                 for (const auto& out : outers) {
-                    auto adj = al::u8{ 0 };
+                    auto adj = 0_u32;
                     for (const auto& [i, n] : util::neumann_neighbors(out) | sv::enumerate) {
                         if (n.within(min, max) and map[n.m_y][n.m_x] == name) {
                             adj |= 1 << i;

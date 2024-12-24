@@ -114,7 +114,7 @@ namespace aoc::day
             }
 
             ASSERT(false, "guard must exist on the map, if it's not, then the input is ill-formed");
-            std::abort();
+            std::unreachable();
         }
 
         Position next_position(Position pos, Facing facing) const

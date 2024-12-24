@@ -16,7 +16,7 @@ namespace aoc::day
     {
         inline al::usize num_digits(al::u64 num)
         {
-            auto digits = al::usize{ 0 };
+            auto digits = 0uz;
             while (num > 0) {
                 num /= 10;
                 ++digits;
@@ -26,7 +26,7 @@ namespace aoc::day
 
         inline std::pair<al::u64, al::u64> split_digits(al::u64 num, al::usize midpoint)
         {
-            auto divisor = al::u64{ 1 };
+            auto divisor = 1_u64;
             for (auto _ : sv::iota(0uz, midpoint)) {
                 divisor *= 10;
             }

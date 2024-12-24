@@ -7,6 +7,7 @@
 namespace aoc::day
 {
     namespace al = aoc::aliases;
+    namespace sr = aoc::common::sr;
     namespace sv = aoc::common::sv;
 
     namespace day13
@@ -54,14 +55,13 @@ namespace aoc::day
                 return { x_val, y_val };
             };
 
-            auto machines = std::vector<Machine>{};
-
-            for (auto group : lines | sv::chunk(4)) {
-                ASSERT(group.size() == 4 or group.size() == 3);
-                machines.emplace_back(parse_btn(group[0]), parse_btn(group[1]), parse_prize(group[2]));
-            }
-
-            return machines;
+            return lines           //
+                 | sv::chunk(4)    //
+                 | sv::transform([&](auto group) -> Machine {
+                       ASSERT(group.size() == 4 or group.size() == 3);
+                       return { parse_btn(group[0]), parse_btn(group[1]), parse_prize(group[2]) };
+                   })
+                 | sr::to<std::vector>();
         }
 
         Output solve_impl(Input input, al::i64 prize_offset) const
@@ -71,7 +71,7 @@ namespace aoc::day
 
                 auto [ax, ay] = btn_a;
                 auto [bx, by] = btn_b;
-                auto [px, py] = prize + Coord{ prize_offset, prize_offset };
+                auto [px, py] = prize + prize_offset;
 
                 auto det   = (ax * by) - (ay * bx);
                 auto det_a = (px * by) - (py * bx);
@@ -86,13 +86,10 @@ namespace aoc::day
 
             constexpr auto cost = Coord{ 3, 1 };
 
-            auto sum = al::i64{ 0 };
-            for (const auto& machine : input) {
-                auto [na, nb]  = solve(machine);
-                sum           += cost.m_x * na + cost.m_y * nb;
-            }
-
-            return sum;
+            return sr::fold_left(input, 0_i64, [&](auto&& sum, auto&& machine) {
+                auto [na, nb] = solve(machine);
+                return sum + cost.m_x * na + cost.m_y * nb;
+            });
         }
 
         Output solve_part_one(Input input) const { return solve_impl(input, 0); }

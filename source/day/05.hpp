@@ -16,7 +16,7 @@ namespace aoc::day
     {
         static constexpr auto id           = "05";
         static constexpr auto name         = "print-queue";
-        static constexpr auto max_line_len = 23;    // the input of 05.txt says so
+        static constexpr auto max_line_len = 23uz;    // the input of 05.txt says so
 
         using Rules   = std::unordered_map<al::u32, std::vector<al::u32>>;
         using Pages   = std::vector<al::u32>;
@@ -134,7 +134,7 @@ namespace aoc::day
                 return std::span{ ordered };
             };
 
-            auto acc_middle_num = al::u32{ 0 };
+            auto acc_middle_num = 0_u32;
 
             for (std::span pages : updates) {
                 auto idx = correctly_ordered_last_index(rules, pages);

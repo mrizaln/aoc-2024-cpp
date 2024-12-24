@@ -94,7 +94,7 @@ namespace aoc::day
                 }
 
                 auto level     = Level::Start;
-                auto tolerance = 1;
+                auto tolerance = 1_i32;
 
                 for (auto i : sv::iota(0uz, invalid_idx)) {
                     auto d = diff[i];

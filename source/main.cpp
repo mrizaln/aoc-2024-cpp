@@ -14,7 +14,7 @@ bool run_impl(const D& day, const std::filesystem::path infile, Fn runner)
     fmt::println(">>> [{}] {:<24.24}", D::id, D::name);
     if (not std::filesystem::exists(infile)) {
         fmt::println(
-            "\t {}: {} - {}\n",    //
+            "\t{}: {} - {}\n",    //
             fmt::styled("FAILED", fmt::fg(fmt::color::red)),
             "input file not found",
             infile
@@ -27,7 +27,7 @@ bool run_impl(const D& day, const std::filesystem::path infile, Fn runner)
             runner(day, infile, part);
         } catch (std::exception& e) {
             fmt::println(
-                "\t {}: exception thrown - {}\n",    //
+                "\t{}: exception thrown - {}\n",    //
                 fmt::styled("FAILED", fmt::fg(fmt::color::red)),
                 e.what()
             );

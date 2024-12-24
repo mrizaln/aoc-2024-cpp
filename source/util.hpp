@@ -6,6 +6,7 @@
 #include <string_view>
 #include <optional>
 #include <system_error>
+#include <utility>
 #include <variant>
 
 #include <fmt/core.h>
@@ -318,12 +319,21 @@ namespace aoc::util
         constexpr Coordinate operator-(const Coordinate& r) const { return { m_x - r.m_x, m_y - r.m_y }; }
         constexpr Coordinate operator-() const { return { -m_x, -m_y }; }
 
+        constexpr Coordinate operator+(const T& r) const { return { m_x + r, m_y + r }; }
+
         // special case for unsigned integral addition with diff of its signed counterpart
         template <typename U>
             requires std::same_as<std::make_signed_t<std::decay_t<T>>, U>
         constexpr Coordinate operator+(const Coordinate<U>& r) const
         {
             return { m_x + static_cast<T>(r.m_x), m_y + static_cast<T>(r.m_y) };
+        }
+
+        template <typename U>
+            requires std::same_as<std::make_signed_t<std::decay_t<T>>, U>
+        constexpr Coordinate operator+(U& r) const
+        {
+            return { m_x + static_cast<T>(r), m_y + static_cast<T>(r) };
         }
 
         // check if `this` is within range [min, max)
