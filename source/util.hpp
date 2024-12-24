@@ -13,6 +13,38 @@
 
 namespace aoc::util
 {
+    template <typename... Ts>
+    struct Overload : Ts...
+    {
+        using Ts::operator()...;
+    };
+
+    struct SplitDelim
+    {
+        using Variant = std::variant<char, std::span<const char>>;
+
+        constexpr SplitDelim(char ch)
+            : m_variant{ ch }
+        {
+        }
+
+        constexpr SplitDelim(std::span<const char> delims)
+            : m_variant{ delims }
+        {
+        }
+
+        constexpr bool is_delim(char ch) const
+        {
+            auto visitor = Overload{
+                [ch](char delim) { return ch == delim; },
+                [ch](std::span<const char> delims) { return std::ranges::find(delims, ch) != delims.end(); },
+            };
+            return std::visit(visitor, m_variant);
+        }
+
+        Variant m_variant;
+    };
+
     template <typename T>
     struct SplitParseResult
     {
@@ -118,7 +150,7 @@ namespace aoc::util
             Variant m_value;
         };
 
-        StringSplitter(std::string_view str, char delim) noexcept
+        StringSplitter(std::string_view str, SplitDelim delim) noexcept
             : m_str{ str }
             , m_delim{ delim }
         {
@@ -130,17 +162,21 @@ namespace aoc::util
                 return std::nullopt;
             }
 
-            while (m_idx <= m_str.size() and m_str[m_idx] == m_delim) {
+            while (m_idx <= m_str.size() and m_delim.is_delim(m_str[m_idx])) {
                 ++m_idx;
             }
 
-            auto pos = m_str.find(m_delim, m_idx);
-            if (pos == std::string_view::npos) {
+            auto it = std::ranges::find_if(m_str | std::views::drop(m_idx), [this](char ch) {
+                return m_delim.is_delim(ch);
+            });
+
+            if (it == m_str.end()) {
                 auto res = m_str.substr(m_idx);
                 m_idx    = m_str.size();    // mark end of line
                 return res;
             }
 
+            auto pos = static_cast<std::size_t>(it - m_str.begin());
             auto res = m_str.substr(m_idx, pos - m_idx);
             m_idx    = pos + 1;
 
@@ -166,11 +202,11 @@ namespace aoc::util
     private:
         std::string_view m_str;
         std::size_t      m_idx   = 0;
-        char             m_delim = ' ';
+        SplitDelim       m_delim = SplitDelim{ ' ' };
     };
 
     template <std::size_t N>
-    constexpr SplitPartResult<N> split_part_n(std::string_view str, char delim) noexcept
+    constexpr SplitPartResult<N> split_part_n(std::string_view str, SplitDelim delim) noexcept
     {
         auto res = SplitPartResult<N>{};
 
@@ -178,17 +214,20 @@ namespace aoc::util
         auto j = 0uz;
 
         while (i < N and j < str.size()) {
-            while (j != str.size() and str[j] == delim) {
+            while (j != str.size() and delim.is_delim(str[j])) {
                 ++j;
             }
 
-            auto pos = str.find(delim, j);
+            auto it = std::ranges::find_if(str | std::views::drop(j), [&delim](char ch) {
+                return delim.is_delim(ch);
+            });
 
-            if (pos == std::string_view::npos) {
+            if (it == str.end()) {
                 res.m_split[i++] = str.substr(j);
                 break;
             }
 
+            auto pos         = static_cast<std::size_t>(it - str.begin());
             res.m_split[i++] = str.substr(j, pos - j);
             j                = pos + 1;
         }
@@ -198,7 +237,7 @@ namespace aoc::util
     }
 
     template <std::size_t N>
-    constexpr SplitResult<N> split_n(std::string_view str, char delim) noexcept
+    constexpr SplitResult<N> split_n(std::string_view str, SplitDelim delim) noexcept
     {
         auto res = split_part_n<N>(str, delim);
         if (res.m_count != N) {
@@ -209,7 +248,7 @@ namespace aoc::util
 
     template <typename T, std::size_t N>
         requires std::is_fundamental_v<T>
-    SplitParseResult<Parsed<T, N>> split_parse_n(std::string_view str, char delim) noexcept
+    SplitParseResult<Parsed<T, N>> split_parse_n(std::string_view str, SplitDelim delim) noexcept
     {
         using Res = SplitParseResult<Parsed<T, N>>;
 
@@ -234,7 +273,7 @@ namespace aoc::util
         requires std::is_fundamental_v<T>
     SplitParseResult<PartParsed<T, N>> split_part_parse_n(
         std::string_view str,
-        char             delim,
+        SplitDelim       delim,
         T                default_value
     ) noexcept
     {
@@ -273,22 +312,22 @@ namespace aoc::util
     {
         using Type = T;
 
-        auto operator<=>(const Coordinate&) const = default;
+        constexpr auto operator<=>(const Coordinate&) const = default;
 
-        Coordinate operator+(const Coordinate& rhs) const { return { m_x + rhs.m_x, m_y + rhs.m_y }; }
-        Coordinate operator-(const Coordinate& rhs) const { return { m_x - rhs.m_x, m_y - rhs.m_y }; }
-        Coordinate operator-() const { return { -m_x, -m_y }; }
+        constexpr Coordinate operator+(const Coordinate& r) const { return { m_x + r.m_x, m_y + r.m_y }; }
+        constexpr Coordinate operator-(const Coordinate& r) const { return { m_x - r.m_x, m_y - r.m_y }; }
+        constexpr Coordinate operator-() const { return { -m_x, -m_y }; }
 
         // special case for unsigned integral addition with diff of its signed counterpart
         template <typename U>
             requires std::same_as<std::make_signed_t<std::decay_t<T>>, U>
-        Coordinate operator+(const Coordinate<U>& rhs) const
+        constexpr Coordinate operator+(const Coordinate<U>& r) const
         {
-            return { m_x + static_cast<T>(rhs.m_x), m_y + static_cast<T>(rhs.m_y) };
+            return { m_x + static_cast<T>(r.m_x), m_y + static_cast<T>(r.m_y) };
         }
 
         // check if `this` is within range [min, max)
-        bool within(const Coordinate& min, const Coordinate& max) const
+        constexpr bool within(const Coordinate& min, const Coordinate& max) const
         {
             return m_x >= min.m_x and m_x < max.m_x and m_y >= min.m_y and m_y < max.m_y;
         }
@@ -363,6 +402,8 @@ namespace aoc::util
         case NeighborDir::NW: return { x - 1, y - 1 };
             // clang-format on
         }
+
+        std::unreachable();
     }
 
     struct Iter2D
