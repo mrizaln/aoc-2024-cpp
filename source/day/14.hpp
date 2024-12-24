@@ -55,16 +55,6 @@ namespace aoc::day
                     .m_data[static_cast<al::usize>(y) * self.m_width + static_cast<al::usize>(x)];
             }
 
-            template <typename Self>
-            auto&& operator[](this Self&& self, util::Coordinate<al::usize> coord)
-            {
-                DEBUG_ASSERT(coord.within({ 0, 0 }, { self.m_width, self.m_height }));
-
-                auto [x, y] = coord;
-                return std::forward<Self>(self)
-                    .m_data[static_cast<al::usize>(y) * self.m_width + static_cast<al::usize>(x)];
-            }
-
             void inc_no_wrap(Coord coord)
             {
                 auto& v = (*this)[coord];
@@ -75,18 +65,20 @@ namespace aoc::day
 
             // the more a cell has other cells around it, the more likely it's in a cluster (the tree)
             // only cells with a value > 0 are considered
-            al::usize score_cluster()
+            al::usize score_cluster(Coord bound)
             {
                 auto score = 0uz;
 
-                for (auto coord : util::iter_2d(m_width, m_height)) {
+                for (auto [x, y] : util::iter_2d(m_width, m_height)) {
+                    auto coord = Coord{ static_cast<al::i64>(x), static_cast<al::i64>(y) };
+
                     if ((*this)[coord] == 0) {
                         continue;
                     }
 
-                    auto surrounding = 0;
+                    auto surrounding = 0uz;
                     for (auto neighbor : util::neumann_neighbors(coord)) {
-                        surrounding += (*this)[neighbor] != 0;
+                        surrounding += (*this)[mod(neighbor, bound)] != 0;
                     }
 
                     score += 1u << surrounding;
@@ -107,8 +99,8 @@ namespace aoc::day
                 content.reserve(m_width * m_height * 3);
 
                 content.append(header);
-                for (auto coord : util::iter_2d(m_width, m_height)) {
-                    auto v = scale((*this)[coord]);
+                for (auto [x, y] : util::iter_2d(m_width, m_height)) {
+                    auto v = scale((*this)[{ static_cast<al::i64>(x), static_cast<al::i64>(y) }]);
                     content.append(fmt::format("{} {} {}\n", v, v, v));
                 }
 
@@ -212,8 +204,8 @@ namespace aoc::day
                     auto pos = robot.move(1, map_size).m_pos;
                     scratch_map.inc_no_wrap(pos);
                 }
-                auto score = scratch_map.score_cluster();
-                if (score > highest_score) {
+
+                if (auto score = scratch_map.score_cluster(map_size); score > highest_score) {
                     highest_score = score;
                     highest_index = i;
                 }
