@@ -11,10 +11,11 @@ find_package(fmt REQUIRED)
 find_package(CLI11 REQUIRED)
 find_package(libassert REQUIRED)
 find_package(rapidhash REQUIRED)
+find_package(magic_enum REQUIRED)
 
 add_executable(main source/main.cpp)
 target_include_directories(main PRIVATE source)
-target_link_libraries(main PRIVATE fmt::fmt CLI11::CLI11 libassert::assert rapidhash::rapidhash)
+target_link_libraries(main PRIVATE fmt::fmt CLI11::CLI11 libassert::assert rapidhash::rapidhash magic_enum::magic_enum)
 target_compile_options(main PRIVATE -Wall -Wextra -Wconversion)
 
 # sanitizer

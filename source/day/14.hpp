@@ -158,10 +158,7 @@ namespace aoc::day
             //  y+  ---------
             //      III |  IV
 
-            auto quadrant_I   = 0uz;
-            auto quadrant_II  = 0uz;
-            auto quadrant_III = 0uz;
-            auto quadrant_IV  = 0uz;
+            auto quadrant = std::array{ 0uz, 0uz, 0uz, 0uz };
 
             const auto [w, h] = map_size;
 
@@ -171,17 +168,17 @@ namespace aoc::day
                 auto [x_mid, y_mid] = std::pair{ w / 2, h / 2 };
 
                 if (x < x_mid and y < y_mid) {
-                    ++quadrant_I;
+                    ++quadrant[0];
                 } else if (x > x_mid and y < y_mid) {
-                    ++quadrant_II;
+                    ++quadrant[1];
                 } else if (x < x_mid and y > y_mid) {
-                    ++quadrant_III;
+                    ++quadrant[2];
                 } else if (x > x_mid and y > y_mid) {
-                    ++quadrant_IV;
+                    ++quadrant[3];
                 }
             }
 
-            return quadrant_I * quadrant_II * quadrant_III * quadrant_IV;
+            return sr::fold_left(quadrant, 1uz, std::multiplies{});
         }
 
         // assuming the tree is filled, not just an outline
@@ -200,7 +197,7 @@ namespace aoc::day
             auto highest_index = 0_i64;
 
             for (auto i : sv::iota(0_i64, w * h)) {
-                for (auto&& robot : robots) {
+                for (auto& robot : robots) {
                     auto pos = robot.move(1, map_size).m_pos;
                     scratch_map.inc_no_wrap(pos);
                 }
@@ -213,13 +210,13 @@ namespace aoc::day
                 scratch_map.fill(0x00);
             }
 
-            // recreate the map with the highest score
-            for (auto robot : input) {
-                robot.move(highest_index + 1, map_size);
-                scratch_map.inc_no_wrap(robot.m_pos);
-            }
+            if constexpr (::aoc::info::is_debug) {
+                // recreate the map with the highest score
+                for (auto robot : input) {
+                    robot.move(highest_index + 1, map_size);
+                    scratch_map.inc_no_wrap(robot.m_pos);
+                }
 
-            if constexpr (info::is_debug) {
                 scratch_map.to_ppm(fmt::format("day14_part2_{:05}.ppm", highest_index + 1));
             }
 
