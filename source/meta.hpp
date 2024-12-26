@@ -3,7 +3,7 @@
 #include <tuple>
 #include <variant>
 
-namespace aoc::helper
+namespace aoc::meta
 {
     template <typename>
     struct ToTupleTraits

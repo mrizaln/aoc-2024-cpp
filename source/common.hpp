@@ -1,20 +1,13 @@
 #pragma once
 
-#include "helper.hpp"
+#include "aliases.hpp"
+#include "concepts.hpp"
+#include "meta.hpp"
 
-#include <fmt/core.h>
+#include <fmt/base.h>
 #include <fmt/ranges.h>
 #include <fmt/std.h>
 #include <libassert/assert.hpp>
-
-#include <concepts>
-#include <filesystem>
-#include <fstream>
-#include <ranges>
-#include <span>
-#include <string_view>
-#include <type_traits>
-#include <vector>
 
 namespace aoc::common
 {
@@ -22,71 +15,13 @@ namespace aoc::common
     namespace sr = std::ranges;
     namespace sv = std::views;
 
-    using Lines = std::span<const std::string_view>;
+    using aliases::Context;
+    using aliases::Lines;
 
-    struct Context
-    {
-        bool m_debug;
-        bool m_benchmark;
-
-        bool is_debug() const noexcept { return m_debug; }
-        bool is_benchmark() const noexcept { return m_benchmark; }
-    };
-
-    template <typename T>
-    concept Streamable = requires (std::ostream& os, const T& t) {
-        { os << t } -> std::same_as<std::ostream&>;
-    };
-
-    template <typename T>
-    concept Displayable = fmt::formattable<T> or Streamable<T>;
-
-    template <typename T>
-    concept Day = requires {
-        requires std::semiregular<T>;
-
-        requires std::is_trivially_move_constructible_v<T>;
-        requires std::is_trivially_move_assignable_v<T>;
-        requires std::is_trivially_copyable_v<T>;
-
-        typename T::Input;
-        typename T::Output;
-
-        requires Displayable<typename T::Output>;
-
-        { T::id } -> std::convertible_to<std::string_view>;
-        { T::name } -> std::convertible_to<std::string_view>;
-
-        requires requires (const T ct, T::Input input, Lines lines, Context ctx) {
-            { ct.parse(lines, ctx) } -> std::same_as<typename T::Input>;
-            { ct.solve_part_one(input, ctx) } -> std::same_as<typename T::Output>;
-            { ct.solve_part_two(input, ctx) } -> std::same_as<typename T::Output>;
-        };
-    };
-
-    template <typename>
-    struct DayTraits : std::false_type
-    {
-    };
-
-    template <Day... T>
-    struct DayTraits<std::tuple<T...>> : std::true_type
-    {
-    };
-
-    template <Day... T>
-    struct DayTraits<std::variant<T...>> : std::true_type
-    {
-    };
-
-    template <typename T>
-    concept AreDays = DayTraits<T>::value;
-
-    enum class WriteMode
-    {
-        Overwrite,
-        Append,
-    };
+    using concepts::AreDays;
+    using concepts::Day;
+    using concepts::Displayable;
+    using concepts::Streamable;
 
     enum class Part
     {
@@ -166,7 +101,7 @@ namespace aoc::common
     std::vector<std::string_view> generate_solutions_ids()
     {
         auto ids = std::vector<std::string_view>{};
-        helper::for_each_tuple<Days>([&]<common::Day T>() {
+        meta::for_each_tuple<Days>([&]<common::Day T>() {
             static_assert(T::id != "all", "Solution id cannot be 'all'");
             ids.push_back(T::id);
         });
@@ -174,10 +109,10 @@ namespace aoc::common
     }
 
     template <AreDays Days>
-    std::optional<helper::ToVariant<Days>> create_solution(std::string_view id)
+    std::optional<meta::ToVariant<Days>> create_solution(std::string_view id)
     {
-        auto solution = std::optional<helper::ToVariant<Days>>{};
-        helper::for_each_tuple<Days>([&]<common::Day T>() {
+        auto solution = std::optional<meta::ToVariant<Days>>{};
+        meta::for_each_tuple<Days>([&]<common::Day T>() {
             if (T::id == id) {
                 solution = T{};
             }

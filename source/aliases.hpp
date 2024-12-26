@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <span>
+#include <string_view>
 
 namespace aoc::aliases
 {
@@ -19,9 +21,22 @@ namespace aoc::aliases
 
     using f32 = float;
     using f64 = double;
+
+    using Lines = std::span<const std::string_view>;
+
+    // I don't know where to place this tbh, but since `aoc::concepts::Day` require this to be defined
+    // beforehand, may as well place it here alongside `Lines` which is also required to be defined beforehand
+    struct Context
+    {
+        bool m_debug;
+        bool m_benchmark;
+
+        bool is_debug() const noexcept { return m_debug; }
+        bool is_benchmark() const noexcept { return m_benchmark; }
+    };
 }
 
-namespace aoc ::inline literals
+namespace aoc::inline literals
 {
     // clang-format off
     constexpr aliases::i8  operator""_i8 (unsigned long long value) { return static_cast<aliases::i8 >(value); }

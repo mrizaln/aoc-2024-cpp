@@ -5,10 +5,6 @@
 #include "concepts.hpp"
 #include "util.hpp"
 
-#include <magic_enum/magic_enum.hpp>
-
-#include <utility>
-
 namespace aoc::day
 {
     namespace al  = aoc::aliases;
@@ -81,7 +77,7 @@ namespace aoc::day
                     case Thing::Wall: fmt::print("#"); break;
                     case Thing::Box: fmt::print("O"); break;
                     case Thing::Empty: fmt::print("."); break;
-                    default: [[unlikely]] fmt::print("?"); break;
+                    default: [[unlikely]] std::unreachable();
                     }
 
                     if (coord.m_x == m_width - 1) {
@@ -232,11 +228,11 @@ namespace aoc::day
                     }
 
                     switch (thing) {
-                    case ThingWide::Wall: fmt::print("█"); break;
+                    case ThingWide::Wall: fmt::print("#"); break;
                     case ThingWide::BoxLeft: fmt::print("["); break;
                     case ThingWide::BoxRight: fmt::print("]"); break;
-                    case ThingWide::Empty: fmt::print(" "); break;
-                    default: [[unlikely]] fmt::print("?"); break;
+                    case ThingWide::Empty: fmt::print("."); break;
+                    default: [[unlikely]] std::unreachable();
                     }
 
                     if (coord.m_x == m_width - 1) {
@@ -369,11 +365,11 @@ namespace aoc::day
                 return empty_count;
             }
 
-            template <al::usize Offset>
+            template <al::usize Offset>    // practically only -1 or 1 offset is allowed
             bool move_vert(Coord coord)
             {
+                // check whether boxes can be moved vertically
                 auto check = [&, p = this](this auto&& s, al::usize l, al::usize r, al::usize y_new) -> bool {
-                    // relies on wraparound to detect below zero
                     if (y_new >= p->m_height or l >= p->m_width or r >= p->m_width) {
                         return false;
                     }
@@ -402,7 +398,6 @@ namespace aoc::day
                 };
 
                 auto move = [&, p = this](this auto&& s, al::usize l, al::usize r, al::usize y_new) -> void {
-                    // relies on wraparound to detect below zero
                     if (y_new >= p->m_height or l >= p->m_width or r >= p->m_width) {
                         return;
                     }
@@ -481,13 +476,7 @@ namespace aoc::day
                     wide[x * 2, y]     = ThingWide::Empty;
                     wide[x * 2 + 1, y] = ThingWide::Empty;
                     break;
-                default:
-                    [[unlikely]] DEBUG_ASSERT(
-                        false,
-                        fmt::format(
-                            "invalid thing: {} at ({}, {})", std::to_underlying(warehouse[x, y]), x, y
-                        )
-                    );
+                default: [[unlikely]] std::unreachable();
                 }
             }
 
@@ -587,7 +576,7 @@ namespace aoc::day
             };
         }
 
-        Output solve_part_one(Input input, common::Context /* ctx */) const
+        Output solve_part_one(Input input, common::Context ctx) const
         {
             auto&& [robot_pos, warehouse, movements] = input;
 
@@ -595,10 +584,15 @@ namespace aoc::day
                 robot_pos = warehouse.move(robot_pos, movement, steps);
             }
 
+            if (ctx.is_debug() and not ctx.is_benchmark()) {
+                fmt::println("'{}' part 1 final state:", name);
+                warehouse.print(robot_pos);
+            }
+
             return warehouse.gps_score();
         }
 
-        Output solve_part_two(Input input, common::Context /* ctx */) const
+        Output solve_part_two(Input input, common::Context ctx) const
         {
             auto&& [robot_pos, warehouse, movements] = input;
 
@@ -607,6 +601,11 @@ namespace aoc::day
 
             for (const auto& [movement, steps] : movements) {
                 robot_pos = wide_warehouse.move(robot_pos, movement, steps);
+            }
+
+            if (ctx.is_debug() and not ctx.is_benchmark()) {
+                fmt::println("'{}' part 2 final state:", name);
+                wide_warehouse.print(robot_pos);
             }
 
             return wide_warehouse.gps_score();

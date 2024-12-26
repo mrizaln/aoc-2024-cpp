@@ -1,7 +1,7 @@
 #include "day/all.hpp"
 
 #include <CLI/CLI.hpp>
-#include <fmt/core.h>
+#include <fmt/base.h>
 #include <fmt/color.h>
 
 using aoc::common::Day, aoc::common::Part, aoc::common::RunResult, aoc::common::BenchResult;
@@ -52,7 +52,7 @@ bool run(const D& day)
         fmt::println("\t  parse time: {}", to_ms(result.m_parse_time));
         fmt::println("\t  solve time: {}", to_ms(result.m_solve_time));
         fmt::println("\t  total time: {}", to_ms(result.m_parse_time + result.m_solve_time));
-        fmt::println("\t  result    : {}\n", result.m_result);
+        fmt::println("\t  result    : {}\n", aoc::common::display(result.m_result));
     });
 }
 
@@ -89,7 +89,7 @@ bool test(const D& day)
         fmt::println("\t  parse time: {}", to_ms(result.m_parse_time));
         fmt::println("\t  solve time: {}", to_ms(result.m_solve_time));
         fmt::println("\t  total time: {}", to_ms(result.m_parse_time + result.m_solve_time));
-        fmt::println("\t  result    : {}\n", result.m_result);
+        fmt::println("\t  result    : {}\n", aoc::common::display(result.m_result));
     });
 }
 
@@ -132,9 +132,9 @@ int main(int argc, char** argv)
     // clang-format on
 
     if (selected_day == "all") {
-        auto successes     = aoc::helper::for_each_tuple(aoc::day::Days{}, run_visitor);
+        auto successes     = aoc::meta::for_each_tuple(aoc::day::Days{}, run_visitor);
         auto success_count = 0;
-        aoc::helper::for_each_tuple(successes, [&](bool success) { success_count += success; });
+        aoc::meta::for_each_tuple(successes, [&](bool success) { success_count += success; });
 
         return static_cast<int>(std::tuple_size_v<aoc::day::Days>) - success_count;
     } else {
