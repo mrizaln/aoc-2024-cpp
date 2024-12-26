@@ -18,17 +18,17 @@ namespace aoc::day
         using Input  = std::monostate;
         using Output = std::monostate;
 
-        Input parse(common::Lines lines) const
+        Input parse(common::Lines lines, common::Context /* ctx */) const
         {
             return {};          // TODO: implement
         }
 
-        Output solve_part_one(Input /* input */) const
+        Output solve_part_one(Input /* input */, common::Context /* ctx */) const
         {
             return {};          // TODO: implement
         }
 
-        Output solve_part_two(Input /* input */) const
+        Output solve_part_two(Input /* input */, common::Context /* ctx */) const
         {
             return {};          // TODO: implement
         }

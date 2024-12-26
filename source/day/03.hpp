@@ -156,9 +156,9 @@ namespace aoc::day
         using Input  = common::Lines;
         using Output = al::i64;
 
-        Input parse(common::Lines lines) const { return lines; }
+        Input parse(common::Lines lines, common::Context /* ctx */) const { return lines; }
 
-        Output solve_part_one(Input input) const
+        Output solve_part_one(Input input, common::Context /* ctx */) const
         {
             auto acc = 0_i64;
 
@@ -170,7 +170,7 @@ namespace aoc::day
             return acc;
         }
 
-        Output solve_part_two(Input input) const
+        Output solve_part_two(Input input, common::Context /* ctx */) const
         {
             auto acc = 0_i64;
 

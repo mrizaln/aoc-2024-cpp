@@ -16,15 +16,6 @@
 #include <type_traits>
 #include <vector>
 
-namespace aoc::info
-{
-#if defined(NDEBUG)
-    constexpr bool is_debug = false;
-#else
-    constexpr bool is_debug = true;
-#endif
-};
-
 namespace aoc::common
 {
     namespace fs = std::filesystem;
@@ -32,6 +23,15 @@ namespace aoc::common
     namespace sv = std::views;
 
     using Lines = std::span<const std::string_view>;
+
+    struct Context
+    {
+        bool m_debug;
+        bool m_benchmark;
+
+        bool is_debug() const noexcept { return m_debug; }
+        bool is_benchmark() const noexcept { return m_benchmark; }
+    };
 
     template <typename T>
     concept Streamable = requires (std::ostream& os, const T& t) {
@@ -57,10 +57,10 @@ namespace aoc::common
         { T::id } -> std::convertible_to<std::string_view>;
         { T::name } -> std::convertible_to<std::string_view>;
 
-        requires requires (const T ct, T::Input input, Lines lines) {
-            { ct.parse(lines) } -> std::same_as<typename T::Input>;
-            { ct.solve_part_one(input) } -> std::same_as<typename T::Output>;
-            { ct.solve_part_two(input) } -> std::same_as<typename T::Output>;
+        requires requires (const T ct, T::Input input, Lines lines, Context ctx) {
+            { ct.parse(lines, ctx) } -> std::same_as<typename T::Input>;
+            { ct.solve_part_one(input, ctx) } -> std::same_as<typename T::Output>;
+            { ct.solve_part_two(input, ctx) } -> std::same_as<typename T::Output>;
         };
     };
 
@@ -191,14 +191,23 @@ namespace aoc::common
         auto timer                 = Timer{};
         auto [_raw_str, raw_lines] = parse_file(infile);
 
+        auto context = Context{
+#if defined(NDEBUG)
+            .m_debug = false,
+#else
+            .m_debug = true,
+#endif
+            .m_benchmark = false,
+        };
+
         timer.reset();
-        auto input      = day.parse(raw_lines);
+        auto input      = day.parse(raw_lines, context);
         auto parse_time = timer.elapsed();
 
         auto solve = [&] {
             switch (part) {
-            case Part::One: return day.solve_part_one(std::move(input)); break;
-            case Part::Two: return day.solve_part_two(std::move(input)); break;
+            case Part::One: return day.solve_part_one(std::move(input), context); break;
+            case Part::Two: return day.solve_part_two(std::move(input), context); break;
             default: [[unlikely]]; std::unreachable();
             }
         };
@@ -224,17 +233,26 @@ namespace aoc::common
         auto timer                 = Timer{};
         auto [_raw_str, raw_lines] = parse_file(infile);
 
+        auto context = Context{
+#if defined(NDEBUG)
+            .m_debug = false,
+#else
+            .m_debug = true,
+#endif
+            .m_benchmark = true,
+        };
+
         auto bench_parse = [&] {
             timer.reset();
-            auto _ = day.parse(raw_lines);
+            auto _ = day.parse(raw_lines, context);
             return timer.elapsed();
         };
 
         auto bench_solve = [&](const D::Input& input) {
             timer.reset();
             switch (part) {
-            case Part::One: day.solve_part_one(input); break;    // copy input
-            case Part::Two: day.solve_part_two(input); break;    // copy input
+            case Part::One: day.solve_part_one(input, context); break;    // copy input
+            case Part::Two: day.solve_part_two(input, context); break;    // copy input
             default: [[unlikely]]; std::unreachable();
             }
             return timer.elapsed();
@@ -250,7 +268,7 @@ namespace aoc::common
             parse_time += bench_parse();
         }
 
-        auto input      = day.parse(raw_lines);
+        auto input      = day.parse(raw_lines, context);
         auto solve_time = Timer::Duration{};
         for (auto _ : sv::iota(0uz, warmup)) {
             std::ignore = bench_solve(input);

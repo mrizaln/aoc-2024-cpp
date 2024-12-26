@@ -135,7 +135,7 @@ namespace aoc::day
         using Input  = std::vector<Robot>;
         using Output = al::usize;
 
-        Input parse(common::Lines lines) const
+        Input parse(common::Lines lines, common::Context /* ctx */) const
         {
             auto parse = [](std::string_view str) -> Robot {
                 auto [p, px, py, v, vx, vy] = util::split_n<6>(str, util::SplitDelim{ " =," }).value();
@@ -150,7 +150,7 @@ namespace aoc::day
             return lines | sv::transform(parse) | sr::to<std::vector>();
         }
 
-        Output solve_part_one(Input input) const
+        Output solve_part_one(Input input, common::Context /* ctx */) const
         {
             //    --> x+
             //  |
@@ -182,7 +182,7 @@ namespace aoc::day
         }
 
         // assuming the tree is filled, not just an outline
-        Output solve_part_two(Input input) const
+        Output solve_part_two(Input input, common::Context ctx) const
         {
             const auto [w, h] = map_size;
 
@@ -210,7 +210,7 @@ namespace aoc::day
                 scratch_map.fill(0x00);
             }
 
-            if constexpr (::aoc::info::is_debug) {
+            if (ctx.is_debug() and not ctx.is_benchmark()) {
                 // recreate the map with the highest score
                 for (auto robot : input) {
                     robot.move(highest_index + 1, map_size);

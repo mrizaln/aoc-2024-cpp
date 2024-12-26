@@ -35,13 +35,13 @@ namespace aoc::day
         using Input  = std::string_view;
         using Output = al::usize;
 
-        Input parse(common::Lines lines) const
+        Input parse(common::Lines lines, common::Context /* ctx */) const
         {
             ASSERT(lines.size() >= 1);
             return lines[0];
         }
 
-        Output solve_part_one(Input input) const
+        Output solve_part_one(Input input, common::Context /* ctx */) const
         {
             auto memory          = std::vector<al::usize>{};
             auto file_id_counter = 0uz;
@@ -71,7 +71,7 @@ namespace aoc::day
             return day9::checksum<empty>(memory);
         }
 
-        Output solve_part_two(Input input) const
+        Output solve_part_two(Input input, common::Context /* ctx */) const
         {
             auto memory          = std::vector<al::usize>{};
             auto file_id_counter = 0uz;

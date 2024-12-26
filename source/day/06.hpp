@@ -214,9 +214,9 @@ namespace aoc::day
             return false;
         }
 
-        Input parse(common::Lines lines) const { return lines; }
+        Input parse(common::Lines lines, common::Context /* ctx */) const { return lines; }
 
-        Output solve_part_one(Input input) const
+        Output solve_part_one(Input input, common::Context /* ctx */) const
         {
             auto scratchmap = ScratchMap{ input[0].size(), input.size(), Facing::Invalid };
 
@@ -243,7 +243,7 @@ namespace aoc::day
             return static_cast<Output>(count);
         }
 
-        Output solve_part_two(Input input) const
+        Output solve_part_two(Input input, common::Context /* ctx */) const
         {
             auto scratchmap      = ScratchMap{ input[0].size(), input.size(), Facing::Invalid };
             auto scratchmap_copy = scratchmap;

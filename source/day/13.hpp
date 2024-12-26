@@ -33,7 +33,7 @@ namespace aoc::day
         using Input  = std::vector<Machine>;
         using Output = al::i64;
 
-        Input parse(common::Lines lines) const
+        Input parse(common::Lines lines, common::Context /* ctx */) const
         {
             auto parse_btn = [](std::string_view line) -> Coord {
                 auto delims                   = util::SplitDelim{ " :,+" };
@@ -92,8 +92,8 @@ namespace aoc::day
             });
         }
 
-        Output solve_part_one(Input input) const { return solve_impl(input, 0); }
-        Output solve_part_two(Input input) const { return solve_impl(input, 10'000'000'000'000); }
+        Output solve_part_one(Input input, common::Context /* ctx */) const { return solve_impl(input, 0); }
+        Output solve_part_two(Input input, common::Context /* ctx */) const { return solve_impl(input, 10'000'000'000'000); }
     };
 
     static_assert(common::Day<Day13>);

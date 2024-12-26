@@ -147,7 +147,7 @@ namespace aoc::day
         using Input  = std::vector<Equation>;
         using Output = al::u64;
 
-        Input parse(common::Lines lines) const
+        Input parse(common::Lines lines, common::Context /* ctx */) const
         {
             auto input = Input{};
 
@@ -174,7 +174,7 @@ namespace aoc::day
             return input;
         }
 
-        Output solve_part_one(Input input) const
+        Output solve_part_one(Input input, common::Context /* ctx */) const
         {
             auto result  = 0uz;
             auto perm_op = PermutatedOperation{};
@@ -189,7 +189,7 @@ namespace aoc::day
             return result;
         }
 
-        Output solve_part_two(Input input) const
+        Output solve_part_two(Input input, common::Context /* ctx */) const
         {
             auto result  = 0uz;
             auto perm_op = PermutatedOperation3{};

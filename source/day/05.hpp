@@ -47,7 +47,7 @@ namespace aoc::day
             return correctly_ordered_last_index(rules, pages) == pages.size();
         }
 
-        Input parse(common::Lines lines) const
+        Input parse(common::Lines lines, common::Context /* ctx */) const
         {
             auto parsed = Input{};
 
@@ -82,7 +82,7 @@ namespace aoc::day
             return parsed;
         }
 
-        Output solve_part_one(Input input) const
+        Output solve_part_one(Input input, common::Context /* ctx */) const
         {
             const auto& [rules, updates] = input;
             auto acc_middle_num          = al::u32{ 0 };
@@ -98,7 +98,7 @@ namespace aoc::day
         }
 
         // TODO: use more efficient algorithm
-        Output solve_part_two(Input input) const
+        Output solve_part_two(Input input, common::Context /* ctx */) const
         {
             const auto& [rules, updates] = input;
 

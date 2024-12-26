@@ -47,7 +47,7 @@ namespace aoc::day
         using Input  = std::vector<Pebble>;
         using Output = al::u64;
 
-        Input parse(common::Lines lines) const
+        Input parse(common::Lines lines, common::Context /* ctx */) const
         {
             ASSERT(lines.size() >= 1);
 
@@ -93,8 +93,8 @@ namespace aoc::day
             return sr::fold_left(input, 0uz, [&](al::usize a, al::u64 n) { return a + blink(0uz, n); });
         }
 
-        Output solve_part_one(Input input) const { return solve_impl(std::move(input), num_blinks_part_one); }
-        Output solve_part_two(Input input) const { return solve_impl(std::move(input), num_blinks_part_two); }
+        Output solve_part_one(Input input, common::Context /* ctx */) const { return solve_impl(std::move(input), num_blinks_part_one); }
+        Output solve_part_two(Input input, common::Context /* ctx */) const { return solve_impl(std::move(input), num_blinks_part_two); }
     };
 
     static_assert(common::Day<Day11>);

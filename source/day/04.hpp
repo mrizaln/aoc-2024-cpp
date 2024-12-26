@@ -105,9 +105,9 @@ namespace aoc::day
         using Input  = common::Lines;
         using Output = al::usize;
 
-        Input parse(common::Lines lines) const { return lines; }
+        Input parse(common::Lines lines, common::Context /* ctx */) const { return lines; }
 
-        Output solve_part_one(Input input) const
+        Output solve_part_one(Input input, common::Context /* ctx */) const
         {
             auto count = 0uz;
             for (auto&& [y, line] : input | sv::enumerate) {
@@ -120,7 +120,7 @@ namespace aoc::day
             return count;
         }
 
-        Output solve_part_two(Input input) const
+        Output solve_part_two(Input input, common::Context /* ctx */) const
         {
             auto count = 0uz;
             for (auto&& [y, line] : input | sv::enumerate | sv::take(input.size() - 1) | sv::drop(1)) {

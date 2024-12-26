@@ -29,7 +29,7 @@ namespace aoc::day
             Decreasing,
         };
 
-        Input parse(common::Lines lines) const
+        Input parse(common::Lines lines, common::Context /* ctx */) const
         {
             auto to_arr = [](std::string_view line) -> Arr {
                 auto res = util::split_part_parse_n<al::i32, max_size>(line, ' ', invalid).as_success();
@@ -39,7 +39,7 @@ namespace aoc::day
             return lines | sv::transform(to_arr) | sr::to<std::vector>();
         }
 
-        Output solve_part_one(Input input) const
+        Output solve_part_one(Input input, common::Context /* ctx */) const
         {
             auto is_safe = [&](const Arr& arr) {
                 auto diff = std::array<al::i32, max_size - 1>{};
@@ -79,7 +79,7 @@ namespace aoc::day
             return static_cast<Output>(count);
         }
 
-        Output solve_part_two(Input input) const
+        Output solve_part_two(Input input, common::Context /* ctx */) const
         {
             auto is_safe = [&](const Arr& arr) {
                 auto diff = std::array<al::i32, max_size - 1>{};

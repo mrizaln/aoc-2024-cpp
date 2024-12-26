@@ -106,7 +106,7 @@ namespace aoc::day
         using Input  = day8::AntennaMap;
         using Output = al::usize;
 
-        Input parse(common::Lines lines) const
+        Input parse(common::Lines lines, common::Context /* ctx */) const
         {
             ASSERT(lines.size() > 0);
 
@@ -125,7 +125,7 @@ namespace aoc::day
             return antenna_map;
         }
 
-        Output solve_part_one(Input input) const
+        Output solve_part_one(Input input, common::Context /* ctx */) const
         {
             const auto& [antennas, width, height] = input;
             auto antinodes                        = CoordinateVector{};
@@ -156,7 +156,7 @@ namespace aoc::day
             return unique_count;
         }
 
-        Output solve_part_two(Input input) const
+        Output solve_part_two(Input input, common::Context /* ctx */) const
         {
             const auto& [antennas, width, height] = input;
 

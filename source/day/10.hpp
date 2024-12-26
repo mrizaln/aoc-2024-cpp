@@ -55,7 +55,7 @@ namespace aoc::day
         using Input  = std::pair<TopographicMap, TrailHeads>;
         using Output = al::usize;
 
-        Input parse(common::Lines lines) const
+        Input parse(common::Lines lines, common::Context /* ctx */) const
         {
             auto trail_heads = TrailHeads{};
 
@@ -69,7 +69,7 @@ namespace aoc::day
             return { TopographicMap{ lines }, trail_heads };
         }
 
-        Output solve_part_one(Input input) const
+        Output solve_part_one(Input input, common::Context /* ctx */) const
         {
             auto&& [map, heads] = input;
 
@@ -94,7 +94,7 @@ namespace aoc::day
             return sr::fold_left(heads, 0uz, acc);
         }
 
-        Output solve_part_two(Input input) const
+        Output solve_part_two(Input input, common::Context /* ctx */) const
         {
             auto&& [map, heads] = input;
 

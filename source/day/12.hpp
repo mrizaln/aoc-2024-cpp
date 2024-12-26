@@ -79,7 +79,7 @@ namespace aoc::day
         using Input  = Map;
         using Output = al::usize;
 
-        Input parse(common::Lines lines) const
+        Input parse(common::Lines lines, common::Context /* ctx */) const
         {
             ASSERT(lines.size() > 0, "can't process an empty input :(");
             auto width = lines[0].size();
@@ -91,7 +91,7 @@ namespace aoc::day
             return { width, lines.size(), lines };
         }
 
-        Output solve_part_one(Input input) const
+        Output solve_part_one(Input input, common::Context /* ctx */) const
         {
             auto&& [width, height, map] = input;
 
@@ -140,7 +140,7 @@ namespace aoc::day
             return price;
         }
 
-        Output solve_part_two(Input input) const
+        Output solve_part_two(Input input, common::Context /* ctx */) const
         {
             auto&& [width, height, map] = input;
 

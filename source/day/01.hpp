@@ -22,7 +22,7 @@ namespace aoc::day
         using Input  = std::vector<Pair>;
         using Output = al::i32;
 
-        Input parse(common::Lines lines) const
+        Input parse(common::Lines lines, common::Context /* ctx */) const
         {
             auto to_pair = [](std::string_view line) -> Pair {
                 auto [l, r] = util::split_parse_n<al::i32, 2>(line, ' ').as_success();
@@ -33,7 +33,7 @@ namespace aoc::day
         }
 
         // TODO: try using binary search tree
-        Output solve_part_one(Input input) const
+        Output solve_part_one(Input input, common::Context /* ctx */) const
         {
             auto left  = std::vector<al::i32>{};
             auto right = std::vector<al::i32>{};
@@ -50,7 +50,7 @@ namespace aoc::day
             return sr::fold_left(sv::zip(left, right) | sv::transform(diff), 0, std::plus{});
         }
 
-        Output solve_part_two(Input input) const
+        Output solve_part_two(Input input, common::Context /* ctx */) const
         {
             auto left      = std::vector<al::i32>{};
             auto right     = std::vector<al::i32>{};
