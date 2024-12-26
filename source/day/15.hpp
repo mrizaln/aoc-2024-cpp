@@ -2,15 +2,19 @@
 
 #include "aliases.hpp"
 #include "common.hpp"
+#include "concepts.hpp"
 #include "util.hpp"
 
 #include <magic_enum/magic_enum.hpp>
 
+#include <utility>
+
 namespace aoc::day
 {
-    namespace al = aoc::aliases;
-    namespace sr = aoc::common::sr;
-    namespace sv = aoc::common::sv;
+    namespace al  = aoc::aliases;
+    namespace sr  = aoc::common::sr;
+    namespace sv  = aoc::common::sv;
+    namespace cnp = aoc::concepts;
 
     namespace day15
     {
@@ -33,8 +37,8 @@ namespace aoc::day
 
         struct MovementStep
         {
-            Movement  m_movement;
-            al::usize m_steps;
+            Movement m_movement;
+            al::u8   m_steps;
         };
 
         struct Warehouse
@@ -74,9 +78,9 @@ namespace aoc::day
                     }
 
                     switch (thing) {
-                    case Thing::Wall: fmt::print("█"); break;
-                    case Thing::Box: fmt::print("░"); break;
-                    case Thing::Empty: fmt::print(" "); break;
+                    case Thing::Wall: fmt::print("#"); break;
+                    case Thing::Box: fmt::print("O"); break;
+                    case Thing::Empty: fmt::print("."); break;
                     default: [[unlikely]] fmt::print("?"); break;
                     }
 
@@ -167,11 +171,12 @@ namespace aoc::day
             al::usize gps_score() const
             {
                 const auto [mx, my] = std::pair{ 1uz, 100uz };
+                const auto [ox, oy] = std::pair{ 1uz, 1uz };
 
                 auto score = 0uz;
                 for (auto [x, y] : util::iter_2d(m_width, m_height)) {
                     if ((*this)[x, y] == Thing::Box) {
-                        score += mx * (x + 1) + my * (y + 1);
+                        score += mx * (x + ox) + my * (y + oy);
                     }
                 }
                 return score;
@@ -228,8 +233,8 @@ namespace aoc::day
 
                     switch (thing) {
                     case ThingWide::Wall: fmt::print("█"); break;
-                    case ThingWide::BoxLeft: fmt::print("░"); break;
-                    case ThingWide::BoxRight: fmt::print("░"); break;
+                    case ThingWide::BoxLeft: fmt::print("["); break;
+                    case ThingWide::BoxRight: fmt::print("]"); break;
                     case ThingWide::Empty: fmt::print(" "); break;
                     default: [[unlikely]] fmt::print("?"); break;
                     }
@@ -242,12 +247,215 @@ namespace aoc::day
 
             Coord move(Coord coord, Movement movement, al::usize steps)
             {
-                return { 0, 0 };    // TODO: implement
+                DEBUG_ASSERT(steps > 0, "moving 0 steps does not makes sense");
+
+                auto [x, y] = coord;
+
+                switch (movement) {
+                case Movement::Right: {
+                    auto actual_steps = move_horz(
+                        steps,
+                        sv::iota(x, m_width),
+                        [&](auto of) { return (*this)[of, y]; },
+                        [&](auto of) { (*this)[x + of, y] = ThingWide::Empty; },
+                        [&, swap = false](auto of) mutable {
+                            if (swap) {
+                                (*this)[x + of, y] = ThingWide::BoxRight;
+                                swap               = false;
+                            } else {
+                                (*this)[x + of, y] = ThingWide::BoxLeft;
+                                swap               = true;
+                            }
+                        }
+                    );
+                    return { x + actual_steps, y };
+                }
+
+                case Movement::Left: {
+                    auto actual_steps = move_horz(
+                        steps,
+                        sv::iota(0uz, x + 1),
+                        [&](auto of) { return (*this)[x - of, y]; },
+                        [&](auto of) { (*this)[x - of, y] = ThingWide::Empty; },
+                        [&, swap = false](auto of) mutable {
+                            if (swap) {
+                                (*this)[x - of, y] = ThingWide::BoxLeft;
+                                swap               = false;
+                            } else {
+                                (*this)[x - of, y] = ThingWide::BoxRight;
+                                swap               = true;
+                            }
+                        }
+                    );
+                    return { x - actual_steps, y };
+                }
+
+                case Movement::Up: {
+                    auto new_coord = coord;
+                    for (auto _ : sv::iota(0uz, steps)) {
+                        if (new_coord.m_y == 0uz) {
+                            break;
+                        }
+
+                        constexpr auto offset = -1uz;
+                        if (not move_vert<offset>(new_coord)) {
+                            break;
+                        }
+
+                        --new_coord.m_y;
+                    }
+                    return new_coord;
+                }
+
+                case Movement::Down: {
+                    auto new_coord = coord;
+                    for (auto _ : sv::iota(0uz, steps)) {
+                        if (new_coord.m_y == m_height - 1) {
+                            break;
+                        }
+
+                        constexpr auto offset = 1uz;
+                        if (not move_vert<offset>(new_coord)) {
+                            break;
+                        }
+
+                        ++new_coord.m_y;
+                    }
+                    return new_coord;
+                }
+
+                default: [[unlikely]] std::unreachable();
+                }
+            }
+
+            al::usize move_horz(
+                // clang-format off
+                al::usize                          steps,
+                cnp::Range                    auto range,
+                cnp::Fn<ThingWide, al::usize> auto getter,
+                cnp::Fn<void, al::usize>      auto empty_setter,
+                cnp::Fn<void, al::usize>      auto box_setter
+                // clang-format on
+            )
+            {
+                auto empty_count = 0uz;
+                auto box_count   = 0uz;
+
+                for (auto i : range | sv::drop(1)) {
+                    switch (getter(i)) {
+                    case ThingWide::Empty: ++empty_count; break;
+                    case ThingWide::BoxLeft: ++box_count; break;
+                    case ThingWide::BoxRight: ++box_count; break;
+                    case ThingWide::Wall: goto end_move_right;
+                    }
+
+                    if (empty_count == steps) {
+                        break;
+                    }
+                }
+
+                if (empty_count == 0uz) {
+                    return 0uz;
+                }
+
+            end_move_right:    // C can't break a loop from switch without goto...
+                for (auto i : sv::iota(0uz, empty_count)) {
+                    empty_setter(i + 1);
+                }
+                for (auto i : sv::iota(0uz, box_count)) {
+                    box_setter(i + 1 + empty_count);
+                }
+
+                return empty_count;
+            }
+
+            template <al::usize Offset>
+            bool move_vert(Coord coord)
+            {
+                auto check = [&, p = this](this auto&& s, al::usize l, al::usize r, al::usize y_new) -> bool {
+                    // relies on wraparound to detect below zero
+                    if (y_new >= p->m_height or l >= p->m_width or r >= p->m_width) {
+                        return false;
+                    }
+
+                    auto left_can_move = [&] {
+                        switch ((*p)[l, y_new]) {
+                        case ThingWide::Empty: return true;
+                        case ThingWide::BoxLeft: return s(l, l + 1, y_new + Offset);    // lined up with curr
+                        case ThingWide::BoxRight: return s(l - 1, l, y_new + Offset);
+                        case ThingWide::Wall: return false;
+                        default: [[unlikely]] std::unreachable();
+                        }
+                    }();
+
+                    auto right_can_move = [&] {
+                        switch ((*p)[r, y_new]) {
+                        case ThingWide::Empty: return true;
+                        case ThingWide::BoxLeft: return s(r, r + 1, y_new + Offset);
+                        case ThingWide::BoxRight: return true;    // already visited by the left check above
+                        case ThingWide::Wall: return false;
+                        default: [[unlikely]] std::unreachable();
+                        }
+                    }();
+
+                    return left_can_move and right_can_move;
+                };
+
+                auto move = [&, p = this](this auto&& s, al::usize l, al::usize r, al::usize y_new) -> void {
+                    // relies on wraparound to detect below zero
+                    if (y_new >= p->m_height or l >= p->m_width or r >= p->m_width) {
+                        return;
+                    }
+
+                    switch ((*p)[l, y_new]) {
+                    case ThingWide::BoxLeft: s(l, l + 1, y_new + Offset); break;    // lined up with current
+                    case ThingWide::BoxRight: s(l - 1, l, y_new + Offset); break;
+                    default: /* do nothing */ break;
+                    }
+
+                    switch ((*p)[r, y_new]) {
+                    case ThingWide::BoxLeft: s(r, r + 1, y_new + Offset); break;
+                    case ThingWide::BoxRight: break;    // already visited by the left move above
+                    default: /* do nothing */ break;
+                    }
+
+                    (*p)[l, y_new]          = ThingWide::BoxLeft;
+                    (*p)[r, y_new]          = ThingWide::BoxRight;
+                    (*p)[l, y_new - Offset] = ThingWide::Empty;
+                    (*p)[r, y_new - Offset] = ThingWide::Empty;
+                };
+
+                auto check_and_move = [&](al::usize l, al::usize r, al::usize y_new) {
+                    if (not check(l, r, y_new)) {
+                        return false;
+                    }
+                    move(l, r, y_new);
+                    return true;
+                };
+
+                auto [x, y] = coord;
+
+                switch ((*this)[x, y + Offset]) {
+                case ThingWide::Empty: return true;
+                case ThingWide::BoxLeft: return check_and_move(x, x + 1, y + 2 * Offset);
+                case ThingWide::BoxRight: return check_and_move(x - 1, x, y + 2 * Offset);
+                case ThingWide::Wall: return false;
+                default: [[unlikely]] std::unreachable();
+                }
             }
 
             al::usize gps_score() const
             {
-                return {};    // TODO: implement
+                const auto [mx, my] = std::pair{ 1uz, 100uz };
+                const auto [ox, oy] = std::pair{ 2uz, 1uz };
+
+                auto score = 0uz;
+                for (auto [x, y] : util::iter_2d(m_width, m_height)) {
+                    if ((*this)[x, y] == ThingWide::BoxLeft) {
+                        score += mx * (x + ox) + my * (y + oy);
+                    }
+                }
+                return score;
             }
 
             al::usize              m_width;
@@ -307,7 +515,7 @@ namespace aoc::day
 
         using Output = al::usize;
 
-        Input parse(common::Lines lines) const
+        Input parse(common::Lines lines, common::Context /* ctx */) const
         {
             ASSERT(not lines.empty(), "can't use empty input");
 
@@ -338,7 +546,7 @@ namespace aoc::day
             }
 
             auto movements = std::vector<MovementStep>{};
-            auto count     = 0uz;
+            auto count     = 0_u8;
             auto prev      = std::optional<Movement>{};
 
             for (auto line : lines | sv::drop(height + 3)) {
@@ -354,7 +562,7 @@ namespace aoc::day
                         }
                     }();
 
-                    if (prev.has_value() and prev.value() == next) {
+                    if (prev.has_value() and prev.value() == next and count < 255) {
                         ++count;
                     } else {
                         if (prev.has_value()) {
@@ -379,32 +587,29 @@ namespace aoc::day
             };
         }
 
-        Output solve_part_one(Input input) const
+        Output solve_part_one(Input input, common::Context /* ctx */) const
         {
             auto&& [robot_pos, warehouse, movements] = input;
 
-            for (auto [movement, steps] : movements) {
+            for (const auto& [movement, steps] : movements) {
                 robot_pos = warehouse.move(robot_pos, movement, steps);
-            }
-
-            if constexpr (::aoc::info::is_debug) {
-                fmt::println("'{}' final state", name);
-                warehouse.print(robot_pos);
             }
 
             return warehouse.gps_score();
         }
 
-        Output solve_part_two(Input input) const
+        Output solve_part_two(Input input, common::Context /* ctx */) const
         {
             auto&& [robot_pos, warehouse, movements] = input;
 
             auto wide_warehouse = day15::widen(warehouse);
             robot_pos           = { robot_pos.m_x * 2, robot_pos.m_y };
 
-            wide_warehouse.print(robot_pos);
+            for (const auto& [movement, steps] : movements) {
+                robot_pos = wide_warehouse.move(robot_pos, movement, steps);
+            }
 
-            return {};    // TODO: implement
+            return wide_warehouse.gps_score();
         }
     };
 
