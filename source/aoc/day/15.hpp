@@ -489,11 +489,12 @@ namespace aoc::day
         static constexpr auto id   = "15";
         static constexpr auto name = "warehouse-woes";
 
-        using Coord        = day15::Coord;
-        using Thing        = day15::Thing;
-        using Movement     = day15::Movement;
-        using MovementStep = day15::MovementStep;
-        using Warehouse    = day15::Warehouse;
+        using Coord         = day15::Coord;
+        using Thing         = day15::Thing;
+        using Movement      = day15::Movement;
+        using MovementStep  = day15::MovementStep;
+        using Warehouse     = day15::Warehouse;
+        using WarehouseWide = day15::WarehouseWide;
 
         struct Input
         {
