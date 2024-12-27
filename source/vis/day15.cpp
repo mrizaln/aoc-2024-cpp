@@ -1,49 +1,11 @@
-#include "common.hpp"
+#include "vis-common.hpp"
 #include "day/15.hpp"
 
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
-#include <fmt/base.h>
 
-#include <charconv>
-
-struct Pixel
-{
-    static consteval Pixel from_hex(std::string_view hex)
-    {
-        if (hex.size() < 7) {
-            throw std::runtime_error("Invalid hex color");
-        }
-        if (hex[0] != '#') {
-            throw std::runtime_error("Invalid hex color");
-        }
-
-        auto p = Pixel{};
-
-        auto [_1, ec1] = std::from_chars(hex.data() + 1, hex.data() + 3, p.m_r, 16);
-        auto [_2, ec2] = std::from_chars(hex.data() + 3, hex.data() + 5, p.m_g, 16);
-        auto [_3, ec3] = std::from_chars(hex.data() + 5, hex.data() + 7, p.m_b, 16);
-
-        if (ec1 != std::errc{} || ec2 != std::errc{} || ec3 != std::errc{}) {
-            throw std::runtime_error("Invalid hex color");
-        }
-        p.m_a = 0xFF;
-
-        return p;
-    }
-
-    std::uint8_t m_r;
-    std::uint8_t m_g;
-    std::uint8_t m_b;
-    std::uint8_t m_a;
-};
-
-struct ImageBuffer
-{
-    std::size_t        m_width;
-    std::size_t        m_height;
-    std::vector<Pixel> m_pixels;
-};
+using vis::ImageBuffer;
+using vis::Pixel;
 
 struct Day15Vis
 {

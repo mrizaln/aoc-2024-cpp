@@ -13,3 +13,4 @@ function(create_executable name)
 endfunction()
 
 create_executable(day15)
+create_executable(day14)
