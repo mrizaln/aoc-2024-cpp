@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <fmt/format.h>
 
 #include <cstdint>
@@ -33,6 +34,26 @@ namespace vis
 
             p.m_a = 0xFF;
             return p;
+        }
+
+        void decay(const Pixel& into, float strength)
+        {
+            strength = std::clamp(strength, 0.0f, 1.0f);
+
+            auto sub_abs = [](std::uint8_t a, std::uint8_t b) -> std::uint8_t {
+                return a > b ? a - b : b - a;
+            };
+
+            auto diff = Pixel{
+                .m_r = sub_abs(m_r, into.m_r),
+                .m_g = sub_abs(m_g, into.m_g),
+                .m_b = sub_abs(m_b, into.m_b),
+                .m_a = sub_abs(m_a, into.m_a),
+            };
+
+            m_r = static_cast<std::uint8_t>(into.m_r + diff.m_r * (1.0f - strength));
+            m_g = static_cast<std::uint8_t>(into.m_g + diff.m_g * (1.0f - strength));
+            m_b = static_cast<std::uint8_t>(into.m_b + diff.m_b * (1.0f - strength));
         }
 
         std::uint8_t m_r;

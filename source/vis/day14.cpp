@@ -72,25 +72,10 @@ struct Day14Vis
 
     void update_image_buffer()
     {
-        auto decay = [](auto& pixel) {
-            auto sub_abs = [](al::u8 a, al::u8 b) -> al::u8 { return a > b ? a - b : b - a; };
-
-            auto diff = Pixel{
-                .m_r = sub_abs(pixel.m_r, empty_color.m_r),
-                .m_g = sub_abs(pixel.m_g, empty_color.m_g),
-                .m_b = sub_abs(pixel.m_b, empty_color.m_b),
-                .m_a = sub_abs(pixel.m_a, empty_color.m_a),
-            };
-
-            pixel.m_r = static_cast<al::u8>(empty_color.m_r + diff.m_r / 2);
-            pixel.m_g = static_cast<al::u8>(empty_color.m_g + diff.m_g / 2);
-            pixel.m_b = static_cast<al::u8>(empty_color.m_b + diff.m_b / 2);
-        };
-
         for (auto [x, y] : aoc::util::iter_2d(m_map.m_width, m_map.m_height)) {
             auto coord = day14::Coord{ static_cast<long>(x), static_cast<long>(y) };
             if (m_map[coord] == 0) {
-                decay(m_image_buffer[x, y]);
+                m_image_buffer[x, y].decay(empty_color, 0.4f);
             } else {
                 m_image_buffer[x, y] = robot_color;
             }
@@ -132,6 +117,7 @@ int main()
 
     window.setVerticalSyncEnabled(true);
     window.setActive(true);
+    window.setKeyRepeatEnabled(false);
 
     auto highest = 0uz;
 
@@ -210,7 +196,7 @@ int main()
         window.clear();
         window.draw(sprite);
 
-        text.setString(fmt::format("{:>5}/{}", vis.m_idx, vis.end));
+        text.setString(fmt::format("{:_>5}/{}", vis.m_idx, vis.end));
         text.setPosition(0.0f, 0.0f);
         window.draw(text);
 

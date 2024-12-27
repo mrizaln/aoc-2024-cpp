@@ -26,6 +26,7 @@ struct Day15Vis
         auto input     = day.parse(raw_input.m_lines, {});
 
         auto warehouse = widen(input.m_warehouse);
+        auto robot_pos = aoc::day::Day15::Coord{ input.m_robot_pos.m_x * 2, input.m_robot_pos.m_y };
 
         auto image = ImageBuffer{
             .m_width  = warehouse.m_width,
@@ -33,26 +34,34 @@ struct Day15Vis
             .m_pixels = std::vector<Pixel>(warehouse.m_width * warehouse.m_height, empty_color)
         };
 
-        return { std::move(warehouse), input.m_robot_pos, std::move(input.m_movements), std::move(image) };
+        return { std::move(warehouse), robot_pos, std::move(input.m_movements), std::move(image) };
     }
 
     bool update()
     {
-        if (m_idx >= m_moves.size()) {
+        if (m_idx >= m_moves.size() and m_remained_steps == 0) {
             return false;
         }
 
+        if (m_remained_steps > 0) {
+            m_robot = m_warehouse.move(m_robot, m_moves[m_idx - 1].m_movement, 1);
+            --m_remained_steps;
+            return true;
+        }
+
         auto [move, steps] = m_moves[m_idx++];
-        m_robot            = m_warehouse.move(m_robot, move, steps);
+        m_robot            = m_warehouse.move(m_robot, move, 1);
+        m_remained_steps   = steps - 1;
 
         return true;
     }
 
     void update_image_buffer()
     {
-        auto colorize = [this](std::size_t x, std::size_t y, Pixel color) {
-            m_image.m_pixels[y * m_image.m_width + x] = color;
+        auto curr_color = [this](std::size_t x, std::size_t y) -> Pixel& {
+            return m_image.m_pixels[y * m_image.m_width + x];
         };
+        auto colorize = [&](std::size_t x, std::size_t y, Pixel color) { curr_color(x, y) = color; };
 
         for (auto [x, y] : aoc::util::iter_2d(m_warehouse.m_width, m_warehouse.m_height)) {
             if (m_robot.m_x == x && m_robot.m_y == y) {
@@ -62,7 +71,9 @@ struct Day15Vis
 
             using T = aoc::day::day15::ThingWide;
             switch (m_warehouse[x, y]) {
-            case T::Empty: colorize(x, y, empty_color); break;
+            case T::Empty:
+                curr_color(x, y).decay(empty_color, 0.05f);    // lower this value to get longer trail :D
+                break;
             case T::BoxLeft: colorize(x, y, left_color); break;
             case T::BoxRight: colorize(x, y, right_color); break;
             case T::Wall: colorize(x, y, wall_color); break;
@@ -91,7 +102,8 @@ struct Day15Vis
     Day15::Coord                     m_robot;
     std::vector<Day15::MovementStep> m_moves;
     ImageBuffer                      m_image;
-    std::size_t                      m_idx = 0;
+    std::size_t                      m_idx            = 0uz;
+    std::size_t                      m_remained_steps = 0uz;
 };
 
 int main()
@@ -102,6 +114,7 @@ int main()
 
     window.setVerticalSyncEnabled(true);
     window.setActive(true);
+    window.setKeyRepeatEnabled(false);
 
     auto vsync       = true;
     auto pause       = false;
@@ -138,6 +151,7 @@ int main()
                     if (vis.update()) {
                         vis.draw_into(texture, true);
                     }
+                    break;
                 }
                 default: /* do nothing */;
                 }
@@ -175,4 +189,6 @@ int main()
 
         window.display();
     }
+
+    fmt::println("warehouse gps score: {}", vis.m_warehouse.gps_score());
 }
