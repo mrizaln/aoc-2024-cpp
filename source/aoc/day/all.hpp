@@ -13,6 +13,7 @@
 #include "day/13.hpp"
 #include "day/14.hpp"
 #include "day/15.hpp"
+#include "day/16.hpp"
 
 namespace aoc::day
 {
@@ -31,5 +32,6 @@ namespace aoc::day
         Day12,
         Day13,
         Day14,
-        Day15>;
+        Day15,
+        Day16>;
 }
