@@ -19,6 +19,14 @@ namespace aoc::util
         std::size_t m_height;
     };
 
+    template <typename Ref>
+        requires std::is_lvalue_reference_v<Ref>
+    struct Iter2DEnumerate
+    {
+        Coordinate<std::size_t> m_coord;
+        Ref                     m_value;
+    };
+
     struct Iter2D::Iterator
     {
         using iterator_category = std::input_iterator_tag;
@@ -95,10 +103,27 @@ namespace aoc::util
     }
 
     template <typename Container>
-    auto iter_2d(const Container& container, std::size_t width, std::size_t height)
+    auto iter_2d(Container&& container, std::size_t width, std::size_t height)
     {
-        return std::views::transform(iter_2d(width, height), [&](auto&& coord) -> decltype(auto) {
+        return std::views::transform(iter_2d(width, height), [&, width](auto&& coord) -> decltype(auto) {
             return container[coord.m_y * width + coord.m_x];
+        });
+    }
+
+    template <typename Container>
+    auto iter_2d_enumerate(Container&& container, std::size_t width, std::size_t height)
+    {
+        using Cont = std::remove_reference_t<Container>;
+        using Ref  = std::conditional_t<
+             std::is_const_v<Cont>,
+             const typename Cont::value_type&,
+             typename Cont::value_type&>;
+
+        return std::views::transform(iter_2d(width, height), [&, width](auto&& coord) {
+            return Iter2DEnumerate<Ref>{
+                .m_coord = coord,
+                .m_value = container[coord.m_y * width + coord.m_x],
+            };
         });
     }
 }

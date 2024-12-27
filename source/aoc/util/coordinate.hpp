@@ -13,34 +13,42 @@ namespace aoc::util
     {
         using Type = T;
 
-        constexpr auto operator<=>(const Coordinate&) const = default;
+        constexpr auto operator<=>(const Coordinate&) const noexcept = default;
 
-        constexpr Coordinate operator*(const T& r) const { return { m_x * r, m_y * r }; }
-        constexpr Coordinate operator/(const T& r) const { return { m_x / r, m_y / r }; }
+        constexpr Coordinate operator*(const T& r) const noexcept { return { m_x * r, m_y * r }; }
+        constexpr Coordinate operator/(const T& r) const noexcept { return { m_x / r, m_y / r }; }
 
-        constexpr Coordinate operator+(const Coordinate& r) const { return { m_x + r.m_x, m_y + r.m_y }; }
-        constexpr Coordinate operator-(const Coordinate& r) const { return { m_x - r.m_x, m_y - r.m_y }; }
-        constexpr Coordinate operator-() const { return { -m_x, -m_y }; }
+        constexpr Coordinate operator+(const Coordinate& r) const noexcept
+        {
+            return { m_x + r.m_x, m_y + r.m_y };
+        }
 
-        constexpr Coordinate operator+(const T& r) const { return { m_x + r, m_y + r }; }
+        constexpr Coordinate operator-(const Coordinate& r) const noexcept
+        {
+            return { m_x - r.m_x, m_y - r.m_y };
+        }
+
+        constexpr Coordinate operator-() const noexcept { return { -m_x, -m_y }; }
+
+        constexpr Coordinate operator+(const T& r) const noexcept { return { m_x + r, m_y + r }; }
 
         // special case for unsigned integral addition with diff of its signed counterpart
         template <typename U>
             requires std::same_as<std::make_signed_t<std::decay_t<T>>, U>
-        constexpr Coordinate operator+(const Coordinate<U>& r) const
+        constexpr Coordinate operator+(const Coordinate<U>& r) const noexcept
         {
             return { m_x + static_cast<T>(r.m_x), m_y + static_cast<T>(r.m_y) };
         }
 
         template <typename U>
             requires std::same_as<std::make_signed_t<std::decay_t<T>>, U>
-        constexpr Coordinate operator+(U& r) const
+        constexpr Coordinate operator+(U& r) const noexcept
         {
             return { m_x + static_cast<T>(r), m_y + static_cast<T>(r) };
         }
 
         // check if `this` is within range [min, max)
-        constexpr bool within(const Coordinate& min, const Coordinate& max) const
+        constexpr bool within(const Coordinate& min, const Coordinate& max) const noexcept
         {
             return m_x >= min.m_x and m_x < max.m_x and m_y >= min.m_y and m_y < max.m_y;
         }
@@ -49,8 +57,50 @@ namespace aoc::util
         T m_y;
     };
 
+    // cast signed to unsigned
     template <typename T>
-    Coordinate<std::make_signed_t<T>> distance(const Coordinate<T>& lhs, const Coordinate<T>& rhs)
+        requires std::is_signed_v<T>
+    constexpr Coordinate<std::make_unsigned_t<T>> to_unsigned(const Coordinate<T>& coord) noexcept
+    {
+        using Unsigned = std::make_unsigned_t<T>;
+        return { static_cast<Unsigned>(coord.m_x), static_cast<Unsigned>(coord.m_y) };
+    }
+
+    // cast unsigned to signed
+    template <typename T>
+        requires std::is_unsigned_v<T>
+    constexpr Coordinate<std::make_signed_t<T>> to_signed(const Coordinate<T>& coord) noexcept
+    {
+        using Signed = std::make_signed_t<T>;
+        return { static_cast<Signed>(coord.m_x), static_cast<Signed>(coord.m_y) };
+    }
+
+    // create a coordinate with unsigned value from signed value
+    template <typename T>
+        requires std::is_signed_v<T>
+    constexpr Coordinate<std::make_unsigned_t<T>> unsigned_coord(T x, T y) noexcept
+    {
+        using Unsigned = std::make_unsigned_t<T>;
+        return { static_cast<Unsigned>(x), static_cast<Unsigned>(y) };
+    }
+
+    // create a coordinate with signed value from unsigned value
+    template <typename T>
+        requires std::is_unsigned_v<T>
+    constexpr Coordinate<std::make_signed_t<T>> signed_coord(T x, T y) noexcept
+    {
+        using Signed = std::make_signed_t<T>;
+        return { static_cast<Signed>(x), static_cast<Signed>(y) };
+    }
+
+    template <typename To, typename From>
+    constexpr Coordinate<To> cast_coord(const Coordinate<From>& from) noexcept
+    {
+        return { static_cast<To>(from.m_x), static_cast<To>(from.m_y) };
+    }
+
+    template <typename T>
+    Coordinate<std::make_signed_t<T>> distance(const Coordinate<T>& lhs, const Coordinate<T>& rhs) noexcept
     {
         using Signed = std::make_signed_t<T>;
 
@@ -72,7 +122,7 @@ namespace aoc::util
      * start from `>`.
      */
     template <typename T>
-    std::array<Coordinate<T>, 4> neumann_neighbors(const Coordinate<T>& coord)
+    std::array<Coordinate<T>, 4> neumann_neighbors(const Coordinate<T>& coord) noexcept
     {
         auto&& [x, y] = coord;
         return {
@@ -94,7 +144,7 @@ namespace aoc::util
      * start from `>`.
      */
     template <typename T>
-    std::array<Coordinate<T>, 8> moore_neighbors(const Coordinate<T>& coord)
+    std::array<Coordinate<T>, 8> moore_neighbors(const Coordinate<T>& coord) noexcept
     {
         auto&& [x, y] = coord;
         return {
@@ -125,7 +175,7 @@ namespace aoc::util
 
     // get the neighbor coordinate by direction (left-handed system)
     template <typename T>
-    util::Coordinate<T> neighbor_by_dir(const util::Coordinate<T>& coord, NeighborDir dir)
+    util::Coordinate<T> neighbor_by_dir(const util::Coordinate<T>& coord, NeighborDir dir) noexcept
     {
         auto&& [x, y] = coord;
 
