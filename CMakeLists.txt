@@ -12,21 +12,7 @@ find_package(CLI11 REQUIRED)
 find_package(libassert REQUIRED)
 find_package(rapidhash REQUIRED)
 find_package(magic_enum REQUIRED)
+find_package(SFML REQUIRED)
 
-add_executable(main source/main.cpp)
-target_include_directories(main PRIVATE source)
-target_link_libraries(main PRIVATE fmt::fmt CLI11::CLI11 libassert::assert rapidhash::rapidhash magic_enum::magic_enum)
-target_compile_options(main PRIVATE -Wall -Wextra -Wconversion)
-
-# sanitizer
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  target_compile_options(main PRIVATE -fsanitize=address,leak,undefined)
-  target_link_options(main PRIVATE -fsanitize=address,leak,undefined)
-endif()
-
-add_custom_command(
-  TARGET main
-  COMMENT "Linking data directory to build directory"
-  PRE_BUILD
-  COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_SOURCE_DIR}/data/
-          $<TARGET_FILE_DIR:main>/data)
+add_subdirectory(source/aoc)
+add_subdirectory(source/vis)
