@@ -13,10 +13,13 @@ namespace aoc::concepts
     concept Fn = requires {
         requires std::invocable<F, Args...>;
         requires std::same_as<std::invoke_result_t<F, Args...>, Ret>;
-    };
+    } or std::same_as<std::identity, F> or std::same_as<aliases::Consume, F>;
 
     template <typename T>
     concept Range = std::ranges::range<T>;
+
+    template <typename T>
+    concept DefaultHashable = std::has_unique_object_representations_v<T>;
 
     template <typename T>
     concept Streamable = requires (std::ostream& os, const T& t) {

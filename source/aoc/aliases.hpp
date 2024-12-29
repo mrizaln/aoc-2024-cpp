@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <span>
 #include <string_view>
+#include <variant>
 
 namespace aoc::aliases
 {
@@ -22,6 +23,8 @@ namespace aoc::aliases
     using f32 = float;
     using f64 = double;
 
+    using unit = std::monostate;
+
     using Lines = std::span<const std::string_view>;
 
     // I don't know where to place this tbh, but since `aoc::concepts::Day` require this to be defined
@@ -33,6 +36,24 @@ namespace aoc::aliases
 
         bool is_debug() const noexcept { return m_debug; }
         bool is_benchmark() const noexcept { return m_benchmark; }
+    };
+
+    // like std::identity but instead of returning the arguments, unchanging, this function consumes the
+    // arguments and ignore them, returning a unit instead
+    struct Consume
+    {
+        template <typename... T>
+        unit operator()(T&&...) const noexcept
+        {
+            return unit{};
+        }
+    };
+
+    template <typename T, typename Mem>
+    struct Proj
+    {
+        Mem T::*      m_mem;
+        constexpr Mem operator()(const T& t) const noexcept { return t.*m_mem; }
     };
 }
 
