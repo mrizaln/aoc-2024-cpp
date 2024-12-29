@@ -41,10 +41,10 @@ namespace aoc::day
 
             bool bounded(const Coord& coord) const { return coord.m_x < m_width and coord.m_y < m_height; }
 
-            void print(std::optional<std::unordered_set<Coord>> best_paths) const
+            void print(const std::unordered_set<Coord>* best_paths) const
             {
                 for (auto [c, v] : util::Array2D<Tile>::iter_enumerate()) {
-                    if (best_paths.has_value() and best_paths->contains(c)) {
+                    if (best_paths and best_paths->contains(c)) {
                         fmt::print("█");
                     } else {
                         switch (v) {
@@ -408,7 +408,7 @@ namespace aoc::day
             auto best_paths     = traverse_all_best_path(best_score_map);
 
             if (ctx.is_debug() and not ctx.is_benchmark()) {
-                map.print(best_paths);
+                map.print(&best_paths);
             }
 
             return best_paths.size();
